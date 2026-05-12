@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ILike, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { InventoryTransactionsEntity } from './Inventory_transactions.entity';
+import { InventoryTransactionsEntity } from './inventory_transactions.entity';
 import { CreateInventoryTransactionsDTO } from './DTO/CreateInventoryTransactionsDTO';
 
 @Injectable()

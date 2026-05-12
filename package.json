@@ -1,8 +1,8 @@
 {
-  "name": "plantilla-nest-js-backend",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "name": "backend-lab",
+  "version": "0.1.0",
+  "description": "Backend laboratory for experimenting with NestJS and modern Node.js/TypeScript ecosystem",
+  "author": "Federico Huespe",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {

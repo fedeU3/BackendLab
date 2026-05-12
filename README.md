@@ -1,98 +1,243 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Backend Lab
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A technical laboratory for experimenting with the latest versions of **NestJS** and the modern Node.js/TypeScript backend ecosystem. This is not a production application — it's a sandbox for validating new dependency versions, testing patterns, integrations, and best practices before adopting them in real projects.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## What is this?
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Backend Lab is a controlled environment to:
 
-## Project setup
+- Test and validate new **NestJS** major/minor releases
+- Experiment with **TypeORM** versions and configuration patterns
+- Explore NestJS features: modules, guards, interceptors, pipes, decorators
+- Prototype CRUD patterns with real TypeScript types
+- Validate integrations before adopting them in production codebases
 
-```bash
-$ npm install
-```
+The modules in this repo are based on a sample Northwind-style schema (customers, products, orders, etc.) — chosen because they're familiar, relatable, and complex enough to expose real-world TypeORM and NestJS behavior.
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ npm run start
+## Tech Stack
 
-# watch mode
-$ npm run start:dev
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Node.js | ≥ 20.x | Runtime |
+| TypeScript | ^5.9 | Language |
+| NestJS | ^11.x | Framework |
+| TypeORM | 0.3.x | ORM |
+| Jest | ^30.x | Testing |
+| ESLint + Prettier | Latest | Linting & formatting |
 
-# production mode
-$ npm run start:prod
-```
+---
 
-## Run tests
+## Prerequisites
+
+- **Node.js** >= 20.x ([download](https://nodejs.org))
+- **npm** >= 9.x (bundled with Node.js)
+- A running **database** if you want to connect TypeORM (PostgreSQL recommended). Without a DB the app still starts but routes will fail at the repository level.
+
+---
+
+## Installation
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
 ```
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Running the Project
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Development with hot-reload
+npm run start:dev
+
+# Development (single run)
+npm run start
+
+# Production (requires build first)
+npm run build
+npm run start:prod
+
+# Debug mode
+npm run start:debug
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+The server starts on `http://localhost:3000` by default. Set `PORT` env variable to override.
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+## Available Scripts
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+| Script | Description |
+|--------|-------------|
+| `npm run start` | Start in development mode |
+| `npm run start:dev` | Start with watch/hot-reload |
+| `npm run start:debug` | Start in debug mode |
+| `npm run start:prod` | Start compiled production build |
+| `npm run build` | Compile TypeScript to `dist/` |
+| `npm run test` | Run unit tests |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run test:cov` | Run tests with coverage report |
+| `npm run lint` | Lint and auto-fix |
+| `npm run format` | Format code with Prettier |
 
-## Support
+---
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Project Structure
 
-## Stay in touch
+```
+src/
+├── app.module.ts                    # Root module (no DB connected by default)
+├── app.controller.ts                # Health-check route (GET /)
+├── app.service.ts
+├── main.ts                          # App bootstrap
+│
+├── customers/                       # Example: full CRUD module
+│   ├── DTO/
+│   │   └── CreateCustomersDTO.ts
+│   ├── customers.controller.ts
+│   ├── customers.controller.spec.ts
+│   ├── customers.entity.ts
+│   ├── customers.module.ts
+│   └── customers.service.ts
+│
+├── products/                        # Similar CRUD pattern
+├── orders/
+├── order_status/
+├── order_tax_status/
+├── purchase_order_status/
+├── employee_privileges/
+├── inventory_transactions/
+├── inventory_transactions_types/
+├── sales_reports/
+├── strings/                         # Generic template module (for new experiments)
+└── priviliges/                      # Note: typo intentionally preserved (legacy name)
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Each module follows the standard NestJS structure:
+- **Entity** — TypeORM table definition
+- **DTO** — Input validation type
+- **Service** — Business logic + repository calls
+- **Controller** — HTTP routes
+- **Module** — Wires everything together
+- **Spec** — Unit test skeleton
 
-## License
+---
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Connecting a Database
+
+By default, `AppModule` does not configure a database connection — none of the feature modules are imported. To experiment with a real database:
+
+1. Add a database driver: `npm install pg` (for PostgreSQL)
+2. Configure `TypeOrmModule.forRoot(...)` in `app.module.ts`:
+
+```typescript
+@Module({
+  imports: [
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: 'localhost',
+      port: 5432,
+      username: 'postgres',
+      password: 'your-password',
+      database: 'backend_lab',
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      synchronize: true, // only for development/lab use
+    }),
+    CustomersModule,
+    ProductsModule,
+    // ... other modules
+  ],
+})
+export class AppModule {}
+```
+
+---
+
+## Available API Routes
+
+Once modules are registered, each exposes these endpoints:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/customers` | List all |
+| GET | `/customers/name/:name` | Filter by name |
+| GET | `/customers/type/:type` | Filter by type |
+| DELETE | `/customers/:id` | Delete by ID |
+
+All other modules (`/products`, `/orders`, `/order-status`, `/order-tax-status`, `/purchase-order-status`, `/employee-privileges`, `/inventory-transactions`, `/inventory-transaction-types`, `/sales-reports`, `/strings`, `/privileges`) expose the same route pattern.
+
+---
+
+## How to Use This Repo as a Lab
+
+### Adding a new experiment
+
+1. Generate a module with the NestJS CLI:
+   ```bash
+   npx @nestjs/cli generate module experiments/my-feature
+   npx @nestjs/cli generate controller experiments/my-feature
+   npx @nestjs/cli generate service experiments/my-feature
+   ```
+
+2. Add your entity and DTO under the new module.
+
+3. Register it in `AppModule` imports.
+
+4. Run `npm run start:dev` and test with curl or Postman.
+
+### Testing a new NestJS version
+
+1. Update `@nestjs/core`, `@nestjs/common`, `@nestjs/platform-express` in `package.json`
+2. Run `npm install`
+3. Check for breaking changes in the [NestJS changelog](https://github.com/nestjs/nest/releases)
+4. Start the app and run tests: `npm run start:dev` and `npm test`
+
+### Best practices for experiments
+
+- Keep experiments in isolated modules — don't mix concerns
+- Write at least one spec per controller (skeleton is already provided)
+- If an experiment is abandoned, remove it cleanly rather than leaving dead code
+- Document the purpose of non-obvious modules with a comment at the top of the module file
+
+---
+
+## Running Tests
+
+```bash
+# All unit tests
+npm run test
+
+# Watch mode (useful during development)
+npm run test:watch
+
+# Coverage report
+npm run test:cov
+```
+
+Tests use mocked repositories via `getRepositoryToken`, so no real database connection is required to run the test suite.
+
+---
+
+## Project Status
+
+**Active lab** — Updated regularly to track the latest stable NestJS and TypeORM releases.
+
+Current focus:
+- NestJS 11.x
+- TypeORM 0.3.x
+- Node.js 20+ compatibility
+- Jest 30.x
+
+---
+
+## Possible Future Improvements
+
+- [ ] Add `.env` support via `@nestjs/config`
+- [ ] Add global validation pipe with `class-validator`
+- [ ] Add Swagger/OpenAPI documentation (`@nestjs/swagger`)
+- [ ] Add Docker Compose with a PostgreSQL container for zero-config DB setup
+- [ ] Add e2e test setup
+- [ ] Explore NestJS microservices and event-driven patterns

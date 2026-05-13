@@ -3,25 +3,25 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 @Entity({name: 'Strings'})
 export class StringsEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column('text')
-  nombre: string;
+  nombre!: string;
 
   @Column('text')
-  tipo: string;
+  tipo!: string;
 
   @Column('text')
-  pertenencia: string;
+  pertenencia!: string;
 
   @Column('text')
-  estado: string;
+  estado!: string;
 
   @Column('numeric')
-  precioAlquiler: number;
+  precioAlquiler!: number;
 
   @Column('bytea')
-  imagen: Buffer;
+  imagen!: Buffer;
 
   //@OneToMany(() => PedidosEquiposEntity, (pedidoEquipo) => pedidoEquipo.equipo)
   //pedidosEquipos: PedidosEquiposEntity[];

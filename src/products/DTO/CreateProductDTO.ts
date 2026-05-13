@@ -1,7 +1,7 @@
 export class CreateProductDTO {
-  nombre: string;
-  tipo: string;
-  pertenencia: string;
-  cantidadTotal: string;
-  cantidadDisponible: string;
+  nombre!: string;
+  tipo!: string;
+  pertenencia!: string;
+  cantidadTotal!: string;
+  cantidadDisponible!: string;
 }

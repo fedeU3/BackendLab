@@ -11,6 +11,11 @@ export class StringsController {
     return this.appService.getAll();
   }
 
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+
   @Get('name/:name')
   async getByName(@Param('name') name: string) {
     return this.appService.getByName(name);

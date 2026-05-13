@@ -2,38 +2,37 @@ import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post } from '@nestj
 import { ProductsService } from './products.service';
 import { CreateProductDTO } from './DTO/CreateProductDTO';
 
-@Controller("Products")
+@Controller('products')
 export class ProductsController {
-  constructor(private readonly appService: ProductsService ) {}
+  constructor(private readonly productsService: ProductsService) {}
 
   @Get()
   getHello(): string {
-    return this.appService.getHello();
+    return this.productsService.getHello();
   }
 
-  @Get()
+  @Get('all')
   getAll() {
-    return this.appService.getAll();
+    return this.productsService.getAll();
   }
 
   @Get('name/:name')
   async getProductByName(@Param('name') name: string) {
-    return this.appService.getByName(name);
+    return this.productsService.getByName(name);
   }
 
   @Get('type/:type')
   async getProductByType(@Param('type') type: string) {
-    return this.appService.getByType(type);
+    return this.productsService.getByType(type);
   }
 
   @Post()
-  //async createCustomer(@Body() createEquipoDto: CreateCustomersDTO) {
-   // return this.appService.createCustomers(createEquipoDto);
- // }
-
+  async createProduct(@Body() createProductDto: CreateProductDTO) {
+    return this.productsService.createProduct(createProductDto);
+  }
 
   @Delete(':id')
   async deleteProduct(@Param('id', ParseIntPipe) id: number) {
-    return this.appService.deleteCustomers(id);
+    return this.productsService.deleteProduct(id);
   }
 }

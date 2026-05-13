@@ -1,42 +1,49 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { ILike, Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
-import { InventoryTransactionsEntity } from './inventory_transactions.entity';
+import { Get, Injectable, NotFoundException } from '@nestjs/common';
+// import { ILike, Repository } from 'typeorm';
+// import { InjectRepository } from '@nestjs/typeorm';
+// import { InventoryTransactionsEntity } from './inventory_transactions.entity';
 import { CreateInventoryTransactionsDTO } from './DTO/CreateInventoryTransactionsDTO';
 
 @Injectable()
 export class InventoryTransactionsService {
-  constructor(
-    @InjectRepository(InventoryTransactionsEntity)
-    private readonly InventoryTransactionsRepository: Repository<InventoryTransactionsEntity>,
-  ) {}
 
+  // constructor(
+  //   @InjectRepository(InventoryTransactionsEntity)
+  //   private readonly InventoryTransactionsRepository: Repository<InventoryTransactionsEntity>,
+  // ) {}
+
+  @Get()
   getAll() {
-    return this.InventoryTransactionsRepository.find();
+    // return this.InventoryTransactionsRepository.find();
+  }
+
+  @Get()
+  getHello(): string {
+    return 'Hello World! Inventory Transactions';
   }
 
   getByName(nombre: string) {
-    const item = this.InventoryTransactionsRepository.find({
-      where: { nombre: ILike(`%${nombre}%`) },
-    });
+    // const item = this.InventoryTransactionsRepository.find({
+    //   where: { nombre: ILike(`%${nombre}%`) },
+    // });
 
     if (!nombre) {
       throw new NotFoundException(`Elemento con nombre ${nombre} no encontrado`);
     }
 
-    return item;
+    // return item;
   }
 
   getByType(tipo: string) {
-    const item = this.InventoryTransactionsRepository.find({
-      where: { tipo: ILike(`%${tipo}%`) },
-    });
+    // const item = this.InventoryTransactionsRepository.find({
+    //   where: { tipo: ILike(`%${tipo}%`) },
+    // });
 
-    if (!item) {
-      throw new NotFoundException(`Elemento con tipo ${tipo} no encontrado`);
-    }
+    // if (!item) {
+    //   throw new NotFoundException(`Elemento con tipo ${tipo} no encontrado`);
+    // }
 
-    return item;
+    // return item;
   }
 
   //async create{{EntityName}}(createDto: Create{{EntityName}}DTO) {
@@ -49,10 +56,10 @@ export class InventoryTransactionsService {
   //}
 
   async deleteInventoryTransactions(id: number): Promise<void> {
-    const item = await this.InventoryTransactionsRepository.findOneBy({ id });
-    if (!item) {
-      throw new NotFoundException(`Elemento con id ${id} no encontrado`);
-    }
-    await this.InventoryTransactionsRepository.delete(id);
+    // const item = await this.InventoryTransactionsRepository.findOneBy({ id });
+    // if (!item) {
+    //   throw new NotFoundException(`Elemento con id ${id} no encontrado`);
+    // }
+    // await this.InventoryTransactionsRepository.delete(id);
   }
 }

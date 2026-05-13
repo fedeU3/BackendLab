@@ -1,28 +1,9 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Module } from '@nestjs/common';
+import { ProductsController } from './products.controller';
+import { ProductsService } from './products.service';
 
-@Entity({name: 'Products'})
-export class ProductsEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column('text')
-  nombre: string;
-
-  @Column('text')
-  tipo: string;
-
-  @Column('text')
-  pertenencia: string;
-
-  @Column('text')
-  estado: string;
-
-  @Column('numeric')
-  precioAlquiler: number;
-
-  @Column('bytea')
-  imagen: Buffer;
-
-  //@OneToMany(() => PedidosEquiposEntity, (pedidoEquipo) => pedidoEquipo.equipo)
-  //pedidosEquipos: PedidosEquiposEntity[];
-}
+@Module({
+  controllers: [ProductsController],
+  providers: [ProductsService],
+})
+export class ProductsModule {}

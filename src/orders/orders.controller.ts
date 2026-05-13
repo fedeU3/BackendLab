@@ -1,14 +1,13 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Controller, Delete, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { CreateOrdersDTO } from './DTO/CreateOrdersDTO';
 
 @Controller('Orders')
 export class OrdersController {
   constructor(private readonly appService: OrdersService) {}
 
   @Get()
-  getAll() {
-    return this.appService.getAll();
+  getHello(): string {
+    return 'Hello World! Orders';
   }
 
   @Get('name/:name')
@@ -21,7 +20,7 @@ export class OrdersController {
     return this.appService.getByType(type);
   }
 
-  @Post()
+  // @Post()
   //async create(@Body() createDto: CreateOrdersDTO) {
   // return this.appService.createOrders(createDto);
   //}

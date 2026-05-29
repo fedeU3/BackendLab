@@ -1,45 +1,45 @@
 # Backend Lab
 
-A technical laboratory for experimenting with the latest versions of **NestJS** and the modern Node.js/TypeScript backend ecosystem. This is not a production application — it's a sandbox for validating new dependency versions, testing patterns, integrations, and best practices before adopting them in real projects.
+Un laboratorio técnico para experimentar con las últimas versiones de **NestJS** y el ecosistema moderno de backend en Node.js/TypeScript. No es una aplicación de producción — es un sandbox para validar versiones de dependencias, probar patrones, integraciones y buenas prácticas antes de adoptarlos en proyectos reales.
 
 ---
 
-## What is this?
+## ¿Qué es esto?
 
-Backend Lab is a controlled environment to:
+Backend Lab es un entorno controlado para:
 
-- Test and validate new **NestJS** major/minor releases
-- Experiment with **TypeORM** versions and configuration patterns
-- Explore NestJS features: modules, guards, interceptors, pipes, decorators
-- Prototype CRUD patterns with real TypeScript types
-- Validate integrations before adopting them in production codebases
+- Probar y validar nuevas versiones mayor/menor de **NestJS**
+- Experimentar con versiones y patrones de configuración de **TypeORM**
+- Explorar funcionalidades de NestJS: módulos, guards, interceptors, pipes, decoradores
+- Prototipar patrones CRUD con tipos TypeScript reales
+- Validar integraciones antes de adoptarlas en proyectos de producción
 
-The modules in this repo are based on a sample Northwind-style schema (customers, products, orders, etc.) — chosen because they're familiar, relatable, and complex enough to expose real-world TypeORM and NestJS behavior.
+Los módulos de este repo están basados en un esquema de ejemplo estilo Northwind (clientes, productos, órdenes, etc.) — elegido porque es familiar, fácil de entender y suficientemente complejo para exponer comportamientos reales de TypeORM y NestJS.
 
 ---
 
-## Tech Stack
+## Stack tecnológico
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
 | Node.js | ≥ 20.x | Runtime |
-| TypeScript | ^5.9 | Language |
+| TypeScript | ^5.9 | Lenguaje |
 | NestJS | ^11.x | Framework |
 | TypeORM | 0.3.x | ORM |
 | Jest | ^30.x | Testing |
-| ESLint + Prettier | Latest | Linting & formatting |
+| ESLint + Prettier | Latest | Linting y formato |
 
 ---
 
-## Prerequisites
+## Prerrequisitos
 
-- **Node.js** >= 20.x ([download](https://nodejs.org))
-- **npm** >= 9.x (bundled with Node.js)
-- A running **database** if you want to connect TypeORM (PostgreSQL recommended). Without a DB the app still starts but routes will fail at the repository level.
+- **Node.js** >= 20.x ([descargar](https://nodejs.org))
+- **npm** >= 9.x (incluido con Node.js)
+- Una **base de datos** activa si querés conectar TypeORM (se recomienda PostgreSQL). Sin DB el servidor arranca igual pero las rutas fallarán a nivel de repositorio.
 
 ---
 
-## Installation
+## Instalación
 
 ```bash
 npm install
@@ -47,54 +47,54 @@ npm install
 
 ---
 
-## Running the Project
+## Levantar el proyecto
 
 ```bash
-# Development with hot-reload
+# Desarrollo con hot-reload
 npm run start:dev
 
-# Development (single run)
+# Desarrollo (ejecución única)
 npm run start
 
-# Production (requires build first)
+# Producción (requiere build previo)
 npm run build
 npm run start:prod
 
-# Debug mode
+# Modo debug
 npm run start:debug
 ```
 
-The server starts on `http://localhost:3000` by default. Set `PORT` env variable to override.
+El servidor arranca en `http://localhost:3000` por defecto. Usar la variable de entorno `PORT` para cambiarlo.
 
 ---
 
-## Available Scripts
+## Scripts disponibles
 
-| Script | Description |
+| Script | Descripción |
 |--------|-------------|
-| `npm run start` | Start in development mode |
-| `npm run start:dev` | Start with watch/hot-reload |
-| `npm run start:debug` | Start in debug mode |
-| `npm run start:prod` | Start compiled production build |
-| `npm run build` | Compile TypeScript to `dist/` |
-| `npm run test` | Run unit tests |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run test:cov` | Run tests with coverage report |
-| `npm run lint` | Lint and auto-fix |
-| `npm run format` | Format code with Prettier |
+| `npm run start` | Inicia en modo desarrollo |
+| `npm run start:dev` | Inicia con watch/hot-reload |
+| `npm run start:debug` | Inicia en modo debug |
+| `npm run start:prod` | Inicia el build compilado de producción |
+| `npm run build` | Compila TypeScript a `dist/` |
+| `npm run test` | Ejecuta tests unitarios |
+| `npm run test:watch` | Ejecuta tests en modo watch |
+| `npm run test:cov` | Ejecuta tests con reporte de cobertura |
+| `npm run lint` | Lintea y auto-corrige |
+| `npm run format` | Formatea el código con Prettier |
 
 ---
 
-## Project Structure
+## Estructura del proyecto
 
 ```
 src/
-├── app.module.ts                    # Root module (no DB connected by default)
-├── app.controller.ts                # Health-check route (GET /)
+├── app.module.ts                    # Módulo raíz (sin DB conectada por defecto)
+├── app.controller.ts                # Ruta de health-check (GET /)
 ├── app.service.ts
-├── main.ts                          # App bootstrap
+├── main.ts                          # Bootstrap de la app
 │
-├── customers/                       # Example: full CRUD module
+├── customers/                       # Ejemplo: módulo CRUD completo
 │   ├── DTO/
 │   │   └── CreateCustomersDTO.ts
 │   ├── customers.controller.ts
@@ -103,7 +103,7 @@ src/
 │   ├── customers.module.ts
 │   └── customers.service.ts
 │
-├── products/                        # Similar CRUD pattern
+├── products/                        # Mismo patrón CRUD
 ├── orders/
 ├── order_status/
 ├── order_tax_status/
@@ -112,26 +112,26 @@ src/
 ├── inventory_transactions/
 ├── inventory_transactions_types/
 ├── sales_reports/
-├── strings/                         # Generic template module (for new experiments)
-└── priviliges/                      # Note: typo intentionally preserved (legacy name)
+├── strings/                         # Módulo de plantilla genérica (para nuevos experimentos)
+└── priviliges/                      # Nota: typo preservado intencionalmente (nombre legado)
 ```
 
-Each module follows the standard NestJS structure:
-- **Entity** — TypeORM table definition
-- **DTO** — Input validation type
-- **Service** — Business logic + repository calls
-- **Controller** — HTTP routes
-- **Module** — Wires everything together
-- **Spec** — Unit test skeleton
+Cada módulo sigue la estructura estándar de NestJS:
+- **Entity** — Definición de tabla TypeORM
+- **DTO** — Tipo de validación de entrada
+- **Service** — Lógica de negocio + llamadas al repositorio
+- **Controller** — Rutas HTTP
+- **Module** — Conecta todo
+- **Spec** — Esqueleto de test unitario
 
 ---
 
-## Connecting a Database
+## Conectar una base de datos
 
-By default, `AppModule` does not configure a database connection — none of the feature modules are imported. To experiment with a real database:
+Por defecto, `AppModule` no configura una conexión a base de datos — ninguno de los módulos de features está importado. Para experimentar con una DB real:
 
-1. Add a database driver: `npm install pg` (for PostgreSQL)
-2. Configure `TypeOrmModule.forRoot(...)` in `app.module.ts`:
+1. Agregar un driver de base de datos: `npm install pg` (para PostgreSQL)
+2. Configurar `TypeOrmModule.forRoot(...)` en `app.module.ts`:
 
 ```typescript
 @Module({
@@ -141,14 +141,14 @@ By default, `AppModule` does not configure a database connection — none of the
       host: 'localhost',
       port: 5432,
       username: 'postgres',
-      password: 'your-password',
+      password: 'tu-password',
       database: 'backend_lab',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true, // only for development/lab use
+      synchronize: true, // solo para desarrollo/lab
     }),
     CustomersModule,
     ProductsModule,
-    // ... other modules
+    // ... otros módulos
   ],
 })
 export class AppModule {}
@@ -156,88 +156,88 @@ export class AppModule {}
 
 ---
 
-## Available API Routes
+## Rutas API disponibles
 
-Once modules are registered, each exposes these endpoints:
+Una vez registrados los módulos, cada uno expone estos endpoints:
 
-| Method | Path | Description |
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/customers` | List all |
-| GET | `/customers/name/:name` | Filter by name |
-| GET | `/customers/type/:type` | Filter by type |
-| DELETE | `/customers/:id` | Delete by ID |
+| GET | `/customers` | Listar todos |
+| GET | `/customers/name/:name` | Filtrar por nombre |
+| GET | `/customers/type/:type` | Filtrar por tipo |
+| DELETE | `/customers/:id` | Eliminar por ID |
 
-All other modules (`/products`, `/orders`, `/order-status`, `/order-tax-status`, `/purchase-order-status`, `/employee-privileges`, `/inventory-transactions`, `/inventory-transaction-types`, `/sales-reports`, `/strings`, `/privileges`) expose the same route pattern.
+Todos los demás módulos (`/products`, `/orders`, `/order-status`, `/order-tax-status`, `/purchase-order-status`, `/employee-privileges`, `/inventory-transactions`, `/inventory-transaction-types`, `/sales-reports`, `/strings`, `/privileges`) exponen el mismo patrón de rutas.
 
 ---
 
-## How to Use This Repo as a Lab
+## Cómo usar este repo como laboratorio
 
-### Adding a new experiment
+### Agregar un nuevo experimento
 
-1. Generate a module with the NestJS CLI:
+1. Generar un módulo con el CLI de NestJS:
    ```bash
-   npx @nestjs/cli generate module experiments/my-feature
-   npx @nestjs/cli generate controller experiments/my-feature
-   npx @nestjs/cli generate service experiments/my-feature
+   npx @nestjs/cli generate module experiments/mi-feature
+   npx @nestjs/cli generate controller experiments/mi-feature
+   npx @nestjs/cli generate service experiments/mi-feature
    ```
 
-2. Add your entity and DTO under the new module.
+2. Agregar la entidad y el DTO dentro del nuevo módulo.
 
-3. Register it in `AppModule` imports.
+3. Registrarlo en los imports de `AppModule`.
 
-4. Run `npm run start:dev` and test with curl or Postman.
+4. Correr `npm run start:dev` y probar con curl o Postman.
 
-### Testing a new NestJS version
+### Probar una nueva versión de NestJS
 
-1. Update `@nestjs/core`, `@nestjs/common`, `@nestjs/platform-express` in `package.json`
-2. Run `npm install`
-3. Check for breaking changes in the [NestJS changelog](https://github.com/nestjs/nest/releases)
-4. Start the app and run tests: `npm run start:dev` and `npm test`
+1. Actualizar `@nestjs/core`, `@nestjs/common`, `@nestjs/platform-express` en `package.json`
+2. Ejecutar `npm install`
+3. Revisar los breaking changes en el [changelog de NestJS](https://github.com/nestjs/nest/releases)
+4. Levantar la app y correr los tests: `npm run start:dev` y `npm test`
 
-### Best practices for experiments
+### Buenas prácticas para experimentos
 
-- Keep experiments in isolated modules — don't mix concerns
-- Write at least one spec per controller (skeleton is already provided)
-- If an experiment is abandoned, remove it cleanly rather than leaving dead code
-- Document the purpose of non-obvious modules with a comment at the top of the module file
+- Mantener los experimentos en módulos aislados — no mezclar responsabilidades
+- Escribir al menos un spec por controller (ya hay un esqueleto incluido)
+- Si un experimento se abandona, eliminarlo limpiamente en lugar de dejar código muerto
+- Documentar el propósito de módulos no obvios con un comentario al inicio del archivo del módulo
 
 ---
 
-## Running Tests
+## Ejecutar tests
 
 ```bash
-# All unit tests
+# Todos los tests unitarios
 npm run test
 
-# Watch mode (useful during development)
+# Modo watch (útil durante el desarrollo)
 npm run test:watch
 
-# Coverage report
+# Reporte de cobertura
 npm run test:cov
 ```
 
-Tests use mocked repositories via `getRepositoryToken`, so no real database connection is required to run the test suite.
+Los tests usan repositorios mockeados via `getRepositoryToken`, por lo que no se requiere conexión real a la base de datos para correr la suite.
 
 ---
 
-## Project Status
+## Estado del proyecto
 
-**Active lab** — Updated regularly to track the latest stable NestJS and TypeORM releases.
+**Lab activo** — Actualizado regularmente para seguir las últimas versiones estables de NestJS y TypeORM.
 
-Current focus:
+Foco actual:
 - NestJS 11.x
 - TypeORM 0.3.x
-- Node.js 20+ compatibility
+- Compatibilidad con Node.js 20+
 - Jest 30.x
 
 ---
 
-## Possible Future Improvements
+## Posibles mejoras futuras
 
-- [ ] Add `.env` support via `@nestjs/config`
-- [ ] Add global validation pipe with `class-validator`
-- [ ] Add Swagger/OpenAPI documentation (`@nestjs/swagger`)
-- [ ] Add Docker Compose with a PostgreSQL container for zero-config DB setup
-- [ ] Add e2e test setup
-- [ ] Explore NestJS microservices and event-driven patterns
+- [ ] Agregar soporte para `.env` via `@nestjs/config`
+- [ ] Agregar global validation pipe con `class-validator`
+- [ ] Agregar documentación Swagger/OpenAPI (`@nestjs/swagger`)
+- [ ] Agregar Docker Compose con un contenedor PostgreSQL para setup de DB sin configuración
+- [ ] Agregar setup de tests e2e
+- [ ] Explorar microservicios de NestJS y patrones event-driven

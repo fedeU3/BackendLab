@@ -1,67 +1,61 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-// import { ILike, Repository } from 'typeorm';
-// import { InjectRepository } from '@nestjs/typeorm';
-// import { OrdersEntity } from './orders.entity';
-import { CreateOrdersDTO } from './DTO/CreateOrdersDTO';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Order } from './orders.entity';
+import { CreateOrderDto } from './DTO/CreateOrdersDTO';
 
 @Injectable()
 export class OrdersService {
+  constructor(
+    @InjectRepository(Order, 'northwind')
+    private readonly ordersRepo: Repository<Order>,
+  ) {}
 
-  // constructor(
-  //   @InjectRepository(OrdersEntity)
-  //   private readonly OrdersRepository: Repository<OrdersEntity>,
-  // ) {}
-
-  getAll() {
-    // return this.OrdersRepository.find();
+  findAll(): Promise<Order[]> {
+    return this.ordersRepo.find({ order: { orderId: 'DESC' } });
   }
 
-  getHello(): string {
-    return 'Hello World Orders!';
+  async findById(orderId: number): Promise<Order> {
+    const order = await this.ordersRepo.findOneBy({ orderId });
+    if (!order) throw new NotFoundException(`Orden con id ${orderId} no encontrada`);
+    return order;
   }
 
-  getByName(nombre: string) {
-    // const item = this.OrdersRepository.find({
-    //   where: { nombre: ILike(`%${nombre}%`) },
-    // });
-
-    if (!nombre) {
-      throw new NotFoundException(`Elemento con nombre ${nombre} no encontrado`);
-    }
-
-    // return item;
+  findByCustomer(customerId: string): Promise<Order[]> {
+    return this.ordersRepo.find({
+      where: { customerId },
+      order: { orderDate: 'DESC' },
+    });
   }
 
-  getById(id: number) {
-    // return this.OrdersRepository.findOneBy({ id });
+  findByEmployee(employeeId: number): Promise<Order[]> {
+    return this.ordersRepo.find({
+      where: { employeeId },
+      order: { orderDate: 'DESC' },
+    });
   }
 
-  getByType(tipo: string) {
-    // const item = this.OrdersRepository.find({
-    //   where: { tipo: ILike(`%${tipo}%`) },
-    // });
-
-    // if (!item) {
-    //   throw new NotFoundException(`Elemento con tipo ${tipo} no encontrado`);
-    // }
-
-    // return item;
+  async create(dto: CreateOrderDto): Promise<Order> {
+    const order = this.ordersRepo.create({
+      customerId: dto.customerId ?? null,
+      employeeId: dto.employeeId ?? null,
+      orderDate: dto.orderDate ? new Date(dto.orderDate) : null,
+      requiredDate: dto.requiredDate ? new Date(dto.requiredDate) : null,
+      shipVia: dto.shipVia ?? null,
+      freight: dto.freight ?? null,
+      shipName: dto.shipName ?? null,
+      shipAddress: dto.shipAddress ?? null,
+      shipCity: dto.shipCity ?? null,
+      shipRegion: dto.shipRegion ?? null,
+      shipPostalCode: dto.shipPostalCode ?? null,
+      shipCountry: dto.shipCountry ?? null,
+    });
+    return this.ordersRepo.save(order);
   }
 
-  async createOrders(createDto: CreateOrdersDTO) {
-    // const newItem = new OrdersEntity();
-    // 🧩 Aquí mapea los campos manualmente según tu DTO
-    // newItem.nombre = createDto.nombre;
-    // newItem.tipo = createDto.tipo;
-
-    // return this.OrdersRepository.save(newItem);
-  }
-
-  async deleteOrders(id: number): Promise<void> {
-    // const item = await this.OrdersRepository.findOneBy({ id });
-    // if (!item) {
-    //   throw new NotFoundException(`Elemento con id ${id} no encontrado`);
-    // }
-    // await this.OrdersRepository.delete(id);
+  async delete(orderId: number): Promise<void> {
+    const order = await this.ordersRepo.findOneBy({ orderId });
+    if (!order) throw new NotFoundException(`Orden con id ${orderId} no encontrada`);
+    await this.ordersRepo.delete({ orderId });
   }
 }

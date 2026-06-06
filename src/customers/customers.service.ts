@@ -1,63 +1,60 @@
-import { Get, Injectable, NotFoundException } from '@nestjs/common';
-// import { ILike, Repository } from 'typeorm';
-// import { InjectRepository } from '@nestjs/typeorm';
-// import { CustomersEntity } from 'src/customers/customers.entity';
-import { CreateCustomersDTO } from 'src/customers/DTO/CreateCustomersDTO';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ILike, Repository } from 'typeorm';
+import { Customer } from './customers.entity';
+import { CreateCustomerDto } from './DTO/CreateCustomersDTO';
 
 @Injectable()
 export class CustomersService {
+  constructor(
+    @InjectRepository(Customer, 'northwind')
+    private readonly customersRepo: Repository<Customer>,
+  ) {}
 
-  // constructor(
-  //   @InjectRepository(CustomersEntity)
-  //   private readonly CustomersRepository: Repository<CustomersEntity>,
-  // ) {}
-
-  @Get()
-  getHello(): string {
-    return 'Hello World! Customers';
+  findAll(): Promise<Customer[]> {
+    return this.customersRepo.find({ order: { companyName: 'ASC' } });
   }
 
-  @Get()
-  getAll() {
-    // return this.CustomersRepository.find();
+  async findById(customerId: string): Promise<Customer> {
+    const customer = await this.customersRepo.findOneBy({ customerId });
+    if (!customer) throw new NotFoundException(`Customer '${customerId}' no encontrado`);
+    return customer;
   }
 
-  getByName(nombre: string) {
-    // const equipo = this.CustomersRepository.find({
-    //   where: { nombre: ILike(`%${nombre}%`) },
-    // })
-
-    if (!nombre) {
-      throw new NotFoundException(`Equipo con ID ${nombre} no encontrado`);
-    }
-
-    // return equipo;
+  findByCompany(name: string): Promise<Customer[]> {
+    return this.customersRepo.find({
+      where: { companyName: ILike(`%${name}%`) },
+      order: { companyName: 'ASC' },
+    });
   }
 
-  getByType(tipo: string) {
-    // const equipo = this.CustomersRepository.find({
-    //   where: { tipo: ILike(`%${tipo}%`) },
-    // })
-
-    // if (!equipo) {
-    //   throw new NotFoundException(`Equipo con ID ${tipo} no encontrado`);
-    // }
-
-    // return equipo;
+  findByCountry(country: string): Promise<Customer[]> {
+    return this.customersRepo.find({
+      where: { country: ILike(`%${country}%`) },
+      order: { companyName: 'ASC' },
+    });
   }
 
-  async createCustomers(createCustomersDto: CreateCustomersDTO) {
-    // const customers = new CustomersEntity();
-    // customers.tipo = createCustomersDto.tipo;
-    // customers.pertenencia = createCustomersDto.pertenencia;
-    // return this.CustomersRepository.save(customers);
+  async create(dto: CreateCustomerDto): Promise<Customer> {
+    const customer = this.customersRepo.create({
+      customerId: dto.customerId,
+      companyName: dto.companyName,
+      contactName: dto.contactName ?? null,
+      contactTitle: dto.contactTitle ?? null,
+      address: dto.address ?? null,
+      city: dto.city ?? null,
+      region: dto.region ?? null,
+      postalCode: dto.postalCode ?? null,
+      country: dto.country ?? null,
+      phone: dto.phone ?? null,
+      fax: dto.fax ?? null,
+    });
+    return this.customersRepo.save(customer);
   }
 
-  async deleteCustomers(id: number): Promise<void> {
-    // const customers = await this.CustomersRepository.findOneBy({ id });
-    // if (!customers) {
-    //   throw new NotFoundException(`Cliente con id ${id} no encontrado`);
-    // }
-    // await this.CustomersRepository.delete(id);
+  async delete(customerId: string): Promise<void> {
+    const customer = await this.customersRepo.findOneBy({ customerId });
+    if (!customer) throw new NotFoundException(`Customer '${customerId}' no encontrado`);
+    await this.customersRepo.delete({ customerId });
   }
 }

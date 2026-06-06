@@ -1,0 +1,2813 @@
+openapi: 3.0.3
+info:
+  title: BackendLab API
+  description: |
+    API educativa con tres laboratorios independientes sobre NestJS + TypeORM.
+
+    **Lab 1 – Fundamentos**: Params, Query, Body, Headers, HttpCode y CRUD in-memory de productos.
+    **Lab 2 – Patrones**: Pipes, Guards, Interceptors, Exception Filters, Custom Decorators, Middleware.
+    **Lab 3 – Integraciones**: JWT Auth (PostgreSQL/TypeORM), Posts CRUD, File Upload, EventEmitter.
+    **Northwind**: Endpoints de lectura sobre las 14 tablas de la base Northwind en Supabase PostgreSQL.
+
+    ### Quick Start – Lab 3
+    1. `POST /lab3/auth/login` con `{ "email": "admin@lab3.com", "password": "admin123" }`
+    2. Copiá el `access_token` y usalo en el header `Authorization: Bearer <token>`
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor de desarrollo local
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtenido desde POST /lab3/auth/login
+
+  schemas:
+
+    # ─── Comunes ──────────────────────────────────────────────────────────────
+
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 404
+        message:
+          type: string
+          example: "Recurso no encontrado"
+        error:
+          type: string
+          example: "Not Found"
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        message:
+          type: array
+          items:
+            type: string
+          example: ["name must be longer than or equal to 2 characters", "price must be a positive number"]
+        error:
+          type: string
+          example: "Bad Request"
+
+    # ─── Lab 1 ────────────────────────────────────────────────────────────────
+
+    Lab1Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Laptop Pro 15"
+        price:
+          type: number
+          format: double
+          example: 999.99
+        category:
+          type: string
+          example: "Electronics"
+        stock:
+          type: integer
+          example: 100
+
+    Lab1CreateProductDto:
+      type: object
+      required: [name, price, category, stock]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 50
+          example: "Laptop Pro 15"
+        price:
+          type: number
+          format: double
+          minimum: 0.01
+          example: 999.99
+        category:
+          type: string
+          example: "Electronics"
+        stock:
+          type: integer
+          minimum: 0
+          example: 100
+
+    Lab1UpdateProductDto:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 50
+          example: "Laptop Pro 15 (actualizado)"
+        price:
+          type: number
+          format: double
+          minimum: 0.01
+          example: 799.99
+        category:
+          type: string
+          example: "Electronics"
+        stock:
+          type: integer
+          minimum: 0
+          example: 50
+
+    DemoBodyDto:
+      type: object
+      required: [name, age, address]
+      properties:
+        name:
+          type: string
+          example: "John Doe"
+        age:
+          type: number
+          minimum: 1
+          example: 25
+        address:
+          type: object
+          required: [street, city]
+          description: Objeto anidado — requiere @ValidateNested() + @Type() en el DTO
+          properties:
+            street:
+              type: string
+              example: "123 Main St"
+            city:
+              type: string
+              example: "New York"
+
+    # ─── Lab 2 ────────────────────────────────────────────────────────────────
+
+    ValidatePipeDto:
+      type: object
+      required: [message, count]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          example: "Hello World"
+        count:
+          type: integer
+          minimum: 1
+          example: 3
+
+    ValidateExceptionDto:
+      type: object
+      required: [requiredField]
+      properties:
+        requiredField:
+          type: string
+          minLength: 1
+          example: "algún valor"
+
+    # ─── Lab 3 ────────────────────────────────────────────────────────────────
+
+    CreateUserDto:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "nuevo@ejemplo.com"
+        password:
+          type: string
+          minLength: 6
+          example: "password123"
+        role:
+          type: string
+          enum: [user, admin]
+          default: user
+          example: "user"
+
+    LoginDto:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "admin@lab3.com"
+        password:
+          type: string
+          minLength: 6
+          example: "admin123"
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT firmado — válido 1 hora
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          example: "admin@lab3.com"
+        role:
+          type: string
+          enum: [user, admin]
+          example: "admin"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-06-01T12:00:00.000Z"
+
+    CreatePostDto:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 200
+          example: "Mi primer post"
+        content:
+          type: string
+          minLength: 1
+          example: "Este es el contenido del post."
+
+    UpdatePostDto:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 200
+          example: "Título actualizado"
+        content:
+          type: string
+          example: "Contenido actualizado."
+
+    PostResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Mi primer post"
+        content:
+          type: string
+          example: "Este es el contenido del post."
+        published:
+          type: boolean
+          example: false
+        authorId:
+          type: integer
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-06-01T12:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-06-01T12:00:00.000Z"
+
+    TriggerEventDto:
+      type: object
+      required: [event, payload]
+      properties:
+        event:
+          type: string
+          example: "custom.event"
+        payload:
+          type: object
+          additionalProperties: true
+          example: { "key": "value", "info": "demo" }
+
+    EventLogEntry:
+      type: object
+      properties:
+        event:
+          type: string
+          example: "post.created"
+        payload:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-06-01T12:00:00.000Z"
+
+    UploadedFileResponse:
+      type: object
+      properties:
+        filename:
+          type: string
+          description: Nombre único generado en el servidor
+          example: "1717200000000-123456789.jpg"
+        originalname:
+          type: string
+          example: "foto.jpg"
+        mimetype:
+          type: string
+          example: "image/jpeg"
+        size:
+          type: integer
+          description: Tamaño en bytes
+          example: 204800
+        url:
+          type: string
+          example: "/uploads/1717200000000-123456789.jpg"
+
+    FileListEntry:
+      type: object
+      properties:
+        filename:
+          type: string
+          example: "1717200000000-123456789.jpg"
+        size:
+          type: integer
+          example: 204800
+        url:
+          type: string
+          example: "/uploads/1717200000000-123456789.jpg"
+        uploadedAt:
+          type: string
+          format: date-time
+          example: "2026-06-01T12:00:00.000Z"
+
+    # ─── Northwind ────────────────────────────────────────────────────────────
+
+    NorthwindCategory:
+      type: object
+      properties:
+        categoryId:
+          type: integer
+          example: 1
+        categoryName:
+          type: string
+          example: "Beverages"
+        description:
+          type: string
+          nullable: true
+          example: "Soft drinks, coffees, teas, beers, and ales"
+        picture:
+          type: string
+          format: byte
+          nullable: true
+          description: Imagen binaria (bytea)
+
+    NorthwindSupplier:
+      type: object
+      properties:
+        supplierId:
+          type: integer
+          example: 1
+        companyName:
+          type: string
+          example: "Exotic Liquids"
+        contactName:
+          type: string
+          nullable: true
+          example: "Charlotte Cooper"
+        contactTitle:
+          type: string
+          nullable: true
+          example: "Purchasing Manager"
+        address:
+          type: string
+          nullable: true
+          example: "49 Gilbert St."
+        city:
+          type: string
+          nullable: true
+          example: "London"
+        region:
+          type: string
+          nullable: true
+          example: null
+        postalCode:
+          type: string
+          nullable: true
+          example: "EC1 4SD"
+        country:
+          type: string
+          nullable: true
+          example: "UK"
+        phone:
+          type: string
+          nullable: true
+          example: "(171) 555-2222"
+        fax:
+          type: string
+          nullable: true
+          example: null
+        homepage:
+          type: string
+          nullable: true
+          example: null
+
+    NorthwindCustomer:
+      type: object
+      properties:
+        customerId:
+          type: string
+          description: Clave natural de 5 caracteres (ej. "ALFKI")
+          example: "ALFKI"
+        companyName:
+          type: string
+          example: "Alfreds Futterkiste"
+        contactName:
+          type: string
+          nullable: true
+          example: "Maria Anders"
+        contactTitle:
+          type: string
+          nullable: true
+          example: "Sales Representative"
+        address:
+          type: string
+          nullable: true
+          example: "Obere Str. 57"
+        city:
+          type: string
+          nullable: true
+          example: "Berlin"
+        region:
+          type: string
+          nullable: true
+          example: null
+        postalCode:
+          type: string
+          nullable: true
+          example: "12209"
+        country:
+          type: string
+          nullable: true
+          example: "Germany"
+        phone:
+          type: string
+          nullable: true
+          example: "030-0074321"
+        fax:
+          type: string
+          nullable: true
+          example: "030-0076545"
+
+    NorthwindProduct:
+      type: object
+      properties:
+        productId:
+          type: integer
+          example: 1
+        productName:
+          type: string
+          example: "Chai"
+        supplierId:
+          type: integer
+          nullable: true
+          example: 1
+        categoryId:
+          type: integer
+          nullable: true
+          example: 1
+        quantityPerUnit:
+          type: string
+          nullable: true
+          example: "10 boxes x 20 bags"
+        unitPrice:
+          type: number
+          format: double
+          nullable: true
+          example: 18.00
+        unitsInStock:
+          type: integer
+          nullable: true
+          example: 39
+        unitsOnOrder:
+          type: integer
+          nullable: true
+          example: 0
+        reorderLevel:
+          type: integer
+          nullable: true
+          example: 10
+        discontinued:
+          type: integer
+          description: "0 = activo, 1 = descontinuado"
+          example: 0
+
+    NorthwindOrder:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          example: 10248
+        customerId:
+          type: string
+          nullable: true
+          example: "VINET"
+        employeeId:
+          type: integer
+          nullable: true
+          example: 5
+        orderDate:
+          type: string
+          format: date
+          nullable: true
+          example: "1996-07-04"
+        requiredDate:
+          type: string
+          format: date
+          nullable: true
+          example: "1996-08-01"
+        shippedDate:
+          type: string
+          format: date
+          nullable: true
+          example: "1996-07-16"
+        shipVia:
+          type: integer
+          nullable: true
+          description: FK hacia shippers.shipperId
+          example: 3
+        freight:
+          type: number
+          format: double
+          nullable: true
+          example: 32.38
+        shipName:
+          type: string
+          nullable: true
+          example: "Vins et alcools Chevalier"
+        shipAddress:
+          type: string
+          nullable: true
+          example: "59 rue de l'Abbaye"
+        shipCity:
+          type: string
+          nullable: true
+          example: "Reims"
+        shipRegion:
+          type: string
+          nullable: true
+          example: null
+        shipPostalCode:
+          type: string
+          nullable: true
+          example: "51100"
+        shipCountry:
+          type: string
+          nullable: true
+          example: "France"
+
+    NorthwindOrderDetail:
+      type: object
+      description: Clave primaria compuesta (orderId + productId)
+      properties:
+        orderId:
+          type: integer
+          example: 10248
+        productId:
+          type: integer
+          example: 11
+        unitPrice:
+          type: number
+          format: double
+          example: 14.00
+        quantity:
+          type: integer
+          example: 12
+        discount:
+          type: number
+          format: float
+          example: 0.0
+
+    NorthwindEmployee:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+          example: 1
+        lastName:
+          type: string
+          example: "Davolio"
+        firstName:
+          type: string
+          example: "Nancy"
+        title:
+          type: string
+          nullable: true
+          example: "Sales Representative"
+        titleOfCourtesy:
+          type: string
+          nullable: true
+          example: "Ms."
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          example: "1948-12-08"
+        hireDate:
+          type: string
+          format: date
+          nullable: true
+          example: "1992-05-01"
+        address:
+          type: string
+          nullable: true
+          example: "507 - 20th Ave. E."
+        city:
+          type: string
+          nullable: true
+          example: "Seattle"
+        region:
+          type: string
+          nullable: true
+          example: "WA"
+        postalCode:
+          type: string
+          nullable: true
+          example: "98122"
+        country:
+          type: string
+          nullable: true
+          example: "USA"
+        homePhone:
+          type: string
+          nullable: true
+          example: "(206) 555-9857"
+        extension:
+          type: string
+          nullable: true
+          example: "5467"
+        notes:
+          type: string
+          nullable: true
+          example: "Education includes a BA in psychology..."
+        reportsTo:
+          type: integer
+          nullable: true
+          description: FK self-referencial hacia employeeId del supervisor
+          example: 2
+        photoPath:
+          type: string
+          nullable: true
+          example: "http://accweb/emmployees/davolio.bmp"
+
+    NorthwindShipper:
+      type: object
+      properties:
+        shipperId:
+          type: integer
+          example: 1
+        companyName:
+          type: string
+          example: "Speedy Express"
+        phone:
+          type: string
+          nullable: true
+          example: "(503) 555-9831"
+
+    NorthwindTerritory:
+      type: object
+      properties:
+        territoryId:
+          type: string
+          description: Clave natural (varchar, ej. "01581")
+          example: "01581"
+        territoryDescription:
+          type: string
+          example: "Westboro"
+        regionId:
+          type: integer
+          example: 1
+
+    NorthwindRegion:
+      type: object
+      properties:
+        regionId:
+          type: integer
+          example: 1
+        regionDescription:
+          type: string
+          example: "Eastern"
+
+    NorthwindEmployeeTerritory:
+      type: object
+      description: Tabla de unión employees ↔ territories (clave compuesta)
+      properties:
+        employeeId:
+          type: integer
+          example: 1
+        territoryId:
+          type: string
+          example: "06897"
+
+    NorthwindCustomerDemographic:
+      type: object
+      properties:
+        customerTypeId:
+          type: string
+          description: Clave natural (varchar)
+          example: "A"
+        customerDesc:
+          type: string
+          nullable: true
+          example: null
+
+    NorthwindCustomerCustomerDemo:
+      type: object
+      description: Tabla de unión customers ↔ customer_demographics (clave compuesta)
+      properties:
+        customerId:
+          type: string
+          example: "ALFKI"
+        customerTypeId:
+          type: string
+          example: "A"
+
+    NorthwindUsState:
+      type: object
+      properties:
+        stateId:
+          type: integer
+          example: 1
+        stateName:
+          type: string
+          nullable: true
+          example: "Alabama"
+        stateAbbr:
+          type: string
+          nullable: true
+          example: "AL"
+        stateRegion:
+          type: string
+          nullable: true
+          example: "south"
+
+tags:
+  - name: General
+    description: Endpoints raíz de la aplicación
+  - name: Lab 1 – Demo
+    description: Demostración de `@Param`, `@Query`, `@Body`, `@Headers` y `@HttpCode`
+  - name: Lab 1 – Products
+    description: CRUD completo de productos **en memoria** (no persiste en DB)
+  - name: Lab 2 – Pipes
+    description: ParseIntPipe, ParseUUIDPipe y pipe custom de transformación
+  - name: Lab 2 – Guards
+    description: ApiKeyGuard (`x-api-key`) y RolesGuard (`x-user-role`)
+  - name: Lab 2 – Interceptors
+    description: LoggingInterceptor, TransformInterceptor y TimeoutInterceptor
+  - name: Lab 2 – Exceptions
+    description: Exception filters y formato de error estandarizado
+  - name: Lab 2 – Decorators
+    description: Decoradores custom `@CurrentUser`, `@Public` y `@Throttle`
+  - name: Lab 2 – Middleware
+    description: RequestIdMiddleware — agrega `x-request-id` a cada request
+  - name: Lab 3 – Auth
+    description: Registro y login con JWT. Usuarios semilla — admin@lab3.com/admin123, user@lab3.com/user123
+  - name: Lab 3 – Posts
+    description: CRUD de posts protegido con JWT. Un post nace como borrador y se publica explícitamente.
+  - name: Lab 3 – Files
+    description: Upload con Multer (JPEG/PNG/GIF/WebP/PDF, máx 5 MB) y streaming de descarga
+  - name: Lab 3 – Events
+    description: EventEmitter2 — emisión de eventos y log en memoria
+  - name: Northwind – Categories
+    description: Tabla `categories`
+  - name: Northwind – Suppliers
+    description: Tabla `suppliers`
+  - name: Northwind – Customers
+    description: Tabla `customers`
+  - name: Northwind – Products
+    description: Tabla `products`
+  - name: Northwind – Orders
+    description: Tabla `orders`
+  - name: Northwind – Order Details
+    description: Tabla `order_details` (clave compuesta order_id + product_id)
+  - name: Northwind – Employees
+    description: Tabla `employees`
+  - name: Northwind – Shippers
+    description: Tabla `shippers`
+  - name: Northwind – Territories
+    description: Tabla `territories`
+  - name: Northwind – Region
+    description: Tabla `region`
+  - name: Northwind – Employee Territories
+    description: Tabla `employee_territories`
+  - name: Northwind – Customer Demographics
+    description: Tabla `customer_demographics`
+  - name: Northwind – Customer Customer Demo
+    description: Tabla `customer_customer_demo`
+  - name: Northwind – US States
+    description: Tabla `us_states`
+
+paths:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # GENERAL
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /home:
+    get:
+      tags: [General]
+      summary: Hello World — health check
+      description: Endpoint raíz definido en `AppController`. Devuelve un string de bienvenida.
+      operationId: getHello
+      responses:
+        "200":
+          description: Servidor funcionando correctamente
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Hello World! Servicio Principal"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB 1 – DEMO
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab1/demo/params/{id}:
+    get:
+      tags: [Lab 1 – Demo]
+      summary: "@Param + ParseIntPipe"
+      description: Extrae `:id` del path y lo convierte a número entero. Devuelve 400 si el valor no es parseable como entero.
+      operationId: demoParams
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      responses:
+        "200":
+          description: Param recibido y tipado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 42
+                      type:
+                        type: string
+                        example: "number"
+                      note:
+                        type: string
+                        example: "ParseIntPipe coercionó el string del path a number"
+              examples:
+                ok:
+                  value:
+                    data:
+                      id: 42
+                      type: "number"
+                      note: "ParseIntPipe coercionó el string del path a number"
+        "400":
+          description: El valor no es un entero válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                badParam:
+                  value:
+                    statusCode: 400
+                    message: "Validation failed (numeric string is expected)"
+                    error: "Bad Request"
+
+  /lab1/demo/query:
+    get:
+      tags: [Lab 1 – Demo]
+      summary: "@Query tipado con DTO (page, limit, sort)"
+      description: |
+        Recibe query params y los transforma al tipo correcto gracias a `class-transformer` + `transform: true` en `ValidationPipe`.
+        Sin `@Type(() => Number)` en el DTO, `"?page=2"` llegaría como `string` y `@IsInt` fallaría.
+      operationId: demoQuery
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 2
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+          example: 5
+        - name: sort
+          in: query
+          schema:
+            type: string
+          example: "name"
+      responses:
+        "200":
+          description: Query params recibidos y transformados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 2
+                      limit:
+                        type: integer
+                        example: 5
+                      sort:
+                        type: string
+                        example: "name"
+
+  /lab1/demo/body:
+    post:
+      tags: [Lab 1 – Demo]
+      summary: "@Body con objeto anidado y validación recursiva"
+      description: |
+        Demuestra `@ValidateNested()` + `@Type(() => AddressDto)` para validar objetos embebidos.
+        Sin esas anotaciones, `class-validator` no inspecciona las propiedades del sub-objeto.
+      operationId: demoBody
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoBodyDto'
+            examples:
+              valido:
+                value:
+                  name: "John Doe"
+                  age: 25
+                  address:
+                    street: "123 Main St"
+                    city: "New York"
+              faltaCity:
+                summary: Falta city en address → 400
+                value:
+                  name: "John Doe"
+                  age: 25
+                  address:
+                    street: "123 Main St"
+      responses:
+        "201":
+          description: Body recibido y validado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/DemoBodyDto'
+                  message:
+                    type: string
+                    example: "Body recibido y validado correctamente"
+        "400":
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+  /lab1/demo/headers:
+    get:
+      tags: [Lab 1 – Demo]
+      summary: "@Headers — leer el header Authorization"
+      description: Lee el header `Authorization` con `@Headers('authorization')`. Enviá cualquier valor para verlo reflejado en la respuesta.
+      operationId: demoHeaders
+      parameters:
+        - name: Authorization
+          in: header
+          schema:
+            type: string
+          example: "Bearer mi-token-de-prueba"
+      responses:
+        "200":
+          description: Valor del header recibido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      authorization:
+                        type: string
+                        nullable: true
+                        example: "Bearer mi-token-de-prueba"
+                      note:
+                        type: string
+                        example: "Leído con @Headers(\"authorization\")"
+
+  /lab1/demo/status:
+    get:
+      tags: [Lab 1 – Demo]
+      summary: "@HttpCode(202) + @Header — status code y header custom"
+      description: |
+        Demuestra que el status code puede ser cualquier valor con `@HttpCode()`.
+        Revisá los **Response Headers** para ver `X-Custom: value`.
+      operationId: demoStatus
+      responses:
+        "202":
+          description: Accepted — revisá el header X-Custom en la respuesta
+          headers:
+            X-Custom:
+              schema:
+                type: string
+                example: "value"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      statusCode:
+                        type: integer
+                        example: 202
+                      note:
+                        type: string
+                        example: "Revisá el header X-Custom en Response headers"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB 1 – PRODUCTS (in-memory CRUD)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab1/products:
+    get:
+      tags: [Lab 1 – Products]
+      summary: Listar productos
+      description: Devuelve todos los productos. Soporta filtros opcionales por nombre y categoría. Los datos viven en memoria — se reinician al reiniciar la app.
+      operationId: lab1FindAllProducts
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Filtro parcial por nombre
+          example: "laptop"
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filtro exacto por categoría
+          example: "Electronics"
+      responses:
+        "200":
+          description: Lista de productos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Lab1Product'
+
+    post:
+      tags: [Lab 1 – Products]
+      summary: Crear producto
+      operationId: lab1CreateProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Lab1CreateProductDto'
+            examples:
+              valido:
+                value:
+                  name: "Laptop Pro 15"
+                  price: 999.99
+                  category: "Electronics"
+                  stock: 100
+              invalido:
+                summary: Validación fallida → 400
+                value:
+                  name: "X"
+                  price: -10
+                  category: ""
+                  stock: 1.5
+      responses:
+        "201":
+          description: Producto creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Lab1Product'
+                  message:
+                    type: string
+                    example: "Product created successfully"
+        "400":
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+  /lab1/products/{id}:
+    get:
+      tags: [Lab 1 – Products]
+      summary: Obtener producto por ID
+      operationId: lab1FindOneProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Producto encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Lab1Product'
+        "404":
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      tags: [Lab 1 – Products]
+      summary: Actualizar producto parcialmente (PATCH)
+      description: Solo enviá los campos que querés modificar. PATCH es actualización parcial, no reemplaza el recurso completo (que sería PUT).
+      operationId: lab1UpdateProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Lab1UpdateProductDto'
+            example:
+              price: 799.99
+              stock: 50
+      responses:
+        "200":
+          description: Producto actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Lab1Product'
+                  message:
+                    type: string
+                    example: "Product updated successfully"
+        "404":
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Lab 1 – Products]
+      summary: Eliminar producto
+      operationId: lab1DeleteProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Producto eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Lab1Product'
+                  message:
+                    type: string
+                    example: "Product deleted successfully"
+        "404":
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB 2 – PIPES
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab2/pipes/parse-int/{value}:
+    get:
+      tags: [Lab 2 – Pipes]
+      summary: ParseIntPipe — coerce string a entero
+      description: Si el valor no es parseable como entero, NestJS responde 400 automáticamente sin llegar al handler.
+      operationId: lab2ParseInt
+      parameters:
+        - name: value
+          in: path
+          required: true
+          schema:
+            type: string
+          examples:
+            valido:
+              value: "99"
+            invalido:
+              value: "abc"
+      responses:
+        "200":
+          description: Valor parseado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      value:
+                        type: integer
+                        example: 99
+                      type:
+                        type: string
+                        example: "number"
+        "400":
+          description: El valor no es un entero válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /lab2/pipes/parse-uuid/{id}:
+    get:
+      tags: [Lab 2 – Pipes]
+      summary: ParseUUIDPipe — valida UUID v4
+      operationId: lab2ParseUuid
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          examples:
+            valido:
+              value: "550e8400-e29b-41d4-a716-446655440000"
+            invalido:
+              value: "no-es-uuid"
+      responses:
+        "200":
+          description: UUID válido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: "550e8400-e29b-41d4-a716-446655440000"
+                      valid:
+                        type: boolean
+                        example: true
+        "400":
+          description: UUID inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /lab2/pipes/custom/{value}:
+    get:
+      tags: [Lab 2 – Pipes]
+      summary: CustomUppercasePipe — transforma a MAYÚSCULAS
+      description: Pipe personalizado que toma el string del param y lo convierte a uppercase antes de que llegue al handler.
+      operationId: lab2CustomPipe
+      parameters:
+        - name: value
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "hola-mundo"
+      responses:
+        "200":
+          description: String transformado a UPPERCASE
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      value:
+                        type: string
+                        example: "HOLA-MUNDO"
+                      note:
+                        type: string
+                        example: "Transformed to UPPERCASE by CustomUppercasePipe"
+
+  /lab2/pipes/validate:
+    post:
+      tags: [Lab 2 – Pipes]
+      summary: ValidationPipe vía DTO — valida body y transforma tipos
+      operationId: lab2ValidatePipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidatePipeDto'
+            examples:
+              valido:
+                value:
+                  message: "Hello World"
+                  count: 3
+              invalido:
+                summary: Validación fallida → 400
+                value:
+                  message: ""
+                  count: 0
+      responses:
+        "201":
+          description: DTO válido — devuelve los datos transformados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ValidatePipeDto'
+        "400":
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB 2 – GUARDS
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab2/guards/public:
+    get:
+      tags: [Lab 2 – Guards]
+      summary: Ruta pública — sin guard
+      operationId: lab2GuardPublic
+      responses:
+        "200":
+          description: Siempre accesible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Public endpoint — always accessible"
+                      timestamp:
+                        type: string
+                        format: date-time
+
+  /lab2/guards/protected:
+    get:
+      tags: [Lab 2 – Guards]
+      summary: ApiKeyGuard — requiere header `x-api-key`
+      description: |
+        Guard que lee el header `x-api-key`. Solo acepta el valor `lab2-secret`.
+        Devuelve 401 si el header falta o tiene otro valor.
+      operationId: lab2GuardProtected
+      parameters:
+        - name: x-api-key
+          in: header
+          required: true
+          schema:
+            type: string
+          example: "lab2-secret"
+      responses:
+        "200":
+          description: Acceso concedido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Access granted"
+                      timestamp:
+                        type: string
+                        format: date-time
+        "401":
+          description: API key inválida o faltante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                sinKey:
+                  value:
+                    statusCode: 401
+                    message: "Invalid or missing API key — usa x-api-key: lab2-secret"
+                    error: "Unauthorized"
+
+  /lab2/guards/protected-roles:
+    get:
+      tags: [Lab 2 – Guards]
+      summary: ApiKeyGuard + RolesGuard — requiere API key Y rol admin
+      description: |
+        Aplica dos guards en cadena:
+        1. `ApiKeyGuard` valida `x-api-key: lab2-secret`
+        2. `RolesGuard` valida `x-user-role: admin`
+      operationId: lab2GuardRoles
+      parameters:
+        - name: x-api-key
+          in: header
+          required: true
+          schema:
+            type: string
+          example: "lab2-secret"
+        - name: x-user-role
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: [admin, user]
+          example: "admin"
+      responses:
+        "200":
+          description: Acceso de admin concedido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Admin access granted"
+                      timestamp:
+                        type: string
+                        format: date-time
+        "401":
+          description: API key inválida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "403":
+          description: Rol insuficiente (no es admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                sinRol:
+                  value:
+                    statusCode: 403
+                    message: "Forbidden resource"
+                    error: "Forbidden"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB 2 – INTERCEPTORS
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab2/interceptors/logging:
+    get:
+      tags: [Lab 2 – Interceptors]
+      summary: LoggingInterceptor — loguea tiempo de respuesta en consola
+      description: El interceptor registra `[GET /lab2/interceptors/logging] Xms` en la consola del servidor.
+      operationId: lab2InterceptorLogging
+      responses:
+        "200":
+          description: OK — revisá los logs del servidor
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /lab2/interceptors/transform:
+    get:
+      tags: [Lab 2 – Interceptors]
+      summary: TransformInterceptor — envuelve la respuesta con timestamp y success
+      description: |
+        Demuestra el patrón de envolver respuestas en un sobre estándar:
+        `{ data: T, timestamp: string, success: true }`
+      operationId: lab2InterceptorTransform
+      responses:
+        "200":
+          description: Respuesta envuelta por el interceptor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                  timestamp:
+                    type: string
+                    format: date-time
+                  success:
+                    type: boolean
+                    example: true
+
+  /lab2/interceptors/timeout:
+    get:
+      tags: [Lab 2 – Interceptors]
+      summary: TimeoutInterceptor — cancela requests que tardan demasiado
+      description: Si el handler no responde dentro del tiempo configurado, devuelve 408 Request Timeout.
+      operationId: lab2InterceptorTimeout
+      responses:
+        "200":
+          description: Respuesta dentro del tiempo límite
+          content:
+            application/json:
+              schema:
+                type: object
+        "408":
+          description: Timeout — el handler tardó demasiado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB 2 – EXCEPTIONS
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab2/exceptions/not-found:
+    get:
+      tags: [Lab 2 – Exceptions]
+      summary: Lanza NotFoundException → 404
+      operationId: lab2ExceptionNotFound
+      responses:
+        "404":
+          description: Recurso no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /lab2/exceptions/forbidden:
+    get:
+      tags: [Lab 2 – Exceptions]
+      summary: Lanza ForbiddenException → 403
+      operationId: lab2ExceptionForbidden
+      responses:
+        "403":
+          description: Acceso prohibido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /lab2/exceptions/custom:
+    get:
+      tags: [Lab 2 – Exceptions]
+      summary: Lanza excepción custom
+      operationId: lab2ExceptionCustom
+      responses:
+        "400":
+          description: Excepción custom lanzada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /lab2/exceptions/validate:
+    post:
+      tags: [Lab 2 – Exceptions]
+      summary: ValidationPipe — campo requerido
+      description: Enviá un body sin `requiredField` para ver el error de validación formateado por el HttpExceptionFilter.
+      operationId: lab2ExceptionValidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateExceptionDto'
+            examples:
+              valido:
+                value:
+                  requiredField: "valor de prueba"
+              invalido:
+                summary: Campo vacío → 400
+                value:
+                  requiredField: ""
+              sinCampo:
+                summary: Campo ausente → 400
+                value: {}
+      responses:
+        "201":
+          description: Validación exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ValidateExceptionDto'
+        "400":
+          description: Campo requerido faltante o vacío
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB 2 – DECORATORS
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab2/decorators/user:
+    get:
+      tags: [Lab 2 – Decorators]
+      summary: "@CurrentUser() — extrae x-user-id del header"
+      description: Decorator custom que lee el header `x-user-id` y lo inyecta como parámetro del handler.
+      operationId: lab2DecoratorUser
+      parameters:
+        - name: x-user-id
+          in: header
+          schema:
+            type: string
+          example: "42"
+      responses:
+        "200":
+          description: User ID extraído del header
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      userId:
+                        type: string
+                        nullable: true
+                        example: "42"
+                      message:
+                        type: string
+                        example: "Hello, user 42"
+
+  /lab2/decorators/public:
+    get:
+      tags: [Lab 2 – Decorators]
+      summary: "@Public() — ruta marcada como pública con metadata"
+      operationId: lab2DecoratorPublic
+      responses:
+        "200":
+          description: Ruta pública vía decorator
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /lab2/decorators/throttled:
+    get:
+      tags: [Lab 2 – Decorators]
+      summary: "@Throttle(10, 60) — rate limit configurado vía metadata"
+      description: Un `ThrottleGuard` podría leer esta metadata para aplicar rate limiting de 10 requests/60s.
+      operationId: lab2DecoratorThrottled
+      responses:
+        "200":
+          description: Metadata de throttle aplicada
+          content:
+            application/json:
+              schema:
+                type: object
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB 2 – MIDDLEWARE
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab2/middleware/request-id:
+    get:
+      tags: [Lab 2 – Middleware]
+      summary: RequestIdMiddleware — agrega x-request-id a la respuesta
+      description: Revisá los **Response Headers** — el middleware agrega `x-request-id` con un UUID único por request.
+      operationId: lab2MiddlewareRequestId
+      responses:
+        "200":
+          description: OK — x-request-id visible en Response Headers
+          headers:
+            x-request-id:
+              schema:
+                type: string
+                format: uuid
+              description: UUID generado por el middleware
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /lab2/middleware/logged:
+    get:
+      tags: [Lab 2 – Middleware]
+      summary: Middleware de logging — registra el request en consola
+      operationId: lab2MiddlewareLogged
+      responses:
+        "200":
+          description: OK — revisá los logs del servidor
+          content:
+            application/json:
+              schema:
+                type: object
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB 3 – AUTH
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab3/auth/register:
+    post:
+      tags: [Lab 3 – Auth]
+      summary: Registrar nuevo usuario
+      operationId: lab3Register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserDto'
+            example:
+              email: "nuevo@ejemplo.com"
+              password: "password123"
+              role: "user"
+      responses:
+        "201":
+          description: Usuario registrado (sin contraseña en la respuesta)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserResponse'
+        "400":
+          description: Datos inválidos (email mal formado, password muy corta)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        "409":
+          description: El email ya está registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicate:
+                  value:
+                    statusCode: 409
+                    message: "Email already registered"
+                    error: "Conflict"
+
+  /lab3/auth/login:
+    post:
+      tags: [Lab 3 – Auth]
+      summary: Iniciar sesión — devuelve JWT
+      description: |
+        Usuarios semilla disponibles:
+        - `admin@lab3.com` / `admin123` (role: admin)
+        - `user@lab3.com` / `user123` (role: user)
+      operationId: lab3Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDto'
+            examples:
+              admin:
+                summary: Login como admin
+                value:
+                  email: "admin@lab3.com"
+                  password: "admin123"
+              user:
+                summary: Login como user
+                value:
+                  email: "user@lab3.com"
+                  password: "user123"
+      responses:
+        "200":
+          description: Login exitoso — copiá el access_token para usarlo en Authorization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                ok:
+                  value:
+                    access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    user:
+                      id: 1
+                      email: "admin@lab3.com"
+                      role: "admin"
+                      createdAt: "2026-06-01T12:00:00.000Z"
+        "401":
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalido:
+                  value:
+                    statusCode: 401
+                    message: "Invalid credentials"
+                    error: "Unauthorized"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB 3 – POSTS
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab3/posts:
+    get:
+      tags: [Lab 3 – Posts]
+      summary: Listar posts publicados (paginado)
+      description: "Solo devuelve posts con `published: true`. Requiere JWT válido."
+      operationId: lab3FindAllPosts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+          example: 10
+      responses:
+        "200":
+          description: Lista de posts publicados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PostResponse'
+        "401":
+          description: Token ausente o inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Lab 3 – Posts]
+      summary: Crear post (nace como borrador)
+      description: "El post se crea con `published: false`. Usá `PUT /:id/publish` para publicarlo."
+      operationId: lab3CreatePost
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostDto'
+            example:
+              title: "Mi primer post"
+              content: "Este es el contenido del post de prueba."
+      responses:
+        "201":
+          description: Post creado como borrador
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PostResponse'
+                  message:
+                    type: string
+                    example: "Post created"
+        "400":
+          description: Validación fallida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        "401":
+          description: Token ausente o inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /lab3/posts/my:
+    get:
+      tags: [Lab 3 – Posts]
+      summary: Listar mis posts (publicados y borradores)
+      description: Devuelve todos los posts del usuario autenticado, independientemente de su estado.
+      operationId: lab3FindMyPosts
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Posts del usuario autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PostResponse'
+        "401":
+          description: Token ausente o inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /lab3/posts/{id}:
+    get:
+      tags: [Lab 3 – Posts]
+      summary: Obtener post por ID
+      description: Devuelve el post si está publicado, o si el solicitante es el autor o un admin.
+      operationId: lab3FindOnePost
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Post encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PostResponse'
+        "401":
+          description: Token ausente o inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: Post no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      tags: [Lab 3 – Posts]
+      summary: Actualizar post parcialmente
+      description: Solo el autor o un admin pueden editar el post.
+      operationId: lab3UpdatePost
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePostDto'
+            example:
+              title: "Título actualizado"
+              content: "Contenido actualizado."
+      responses:
+        "200":
+          description: Post actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PostResponse'
+                  message:
+                    type: string
+                    example: "Post updated"
+        "403":
+          description: El usuario no es el autor ni admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Lab 3 – Posts]
+      summary: Eliminar post
+      description: Solo el autor o un admin pueden eliminar el post.
+      operationId: lab3DeletePost
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Post eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PostResponse'
+                  message:
+                    type: string
+                    example: "Post deleted"
+        "403":
+          description: El usuario no es el autor ni admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /lab3/posts/{id}/publish:
+    put:
+      tags: [Lab 3 – Posts]
+      summary: Alternar estado publicado/borrador
+      description: Cambia `published` de `true` a `false` o viceversa. Solo el autor o un admin pueden hacerlo.
+      operationId: lab3TogglePublish
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Estado de publicación alternado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PostResponse'
+                  message:
+                    type: string
+                    example: "Publish status toggled"
+        "403":
+          description: El usuario no es el autor ni admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB 3 – FILES
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab3/files/upload:
+    post:
+      tags: [Lab 3 – Files]
+      summary: Subir archivo (imagen o PDF, máx 5 MB)
+      description: |
+        Tipos MIME permitidos: `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `application/pdf`.
+        El archivo se guarda en `/uploads/` con un nombre único generado por el servidor.
+        En Postman: Body → **form-data** → columna izquierda cambiá `Text` por **`File`**.
+      operationId: lab3UploadFile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "Archivo — campo debe llamarse 'file'"
+      responses:
+        "201":
+          description: Archivo subido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UploadedFileResponse'
+                  message:
+                    type: string
+                    example: "Archivo subido exitosamente"
+              examples:
+                ok:
+                  value:
+                    data:
+                      filename: "1717200000000-123456789.jpg"
+                      originalname: "foto.jpg"
+                      mimetype: "image/jpeg"
+                      size: 204800
+                      url: "/uploads/1717200000000-123456789.jpg"
+                    message: "Archivo subido exitosamente"
+        "400":
+          description: Tipo de archivo no permitido, tamaño excedido o campo ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                tipoNoPermitido:
+                  value:
+                    statusCode: 400
+                    message: "Tipo \"text/plain\" no permitido. Permitidos: image/jpeg, image/png, ..."
+                    error: "Bad Request"
+        "401":
+          description: Token ausente o inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /lab3/files:
+    get:
+      tags: [Lab 3 – Files]
+      summary: Listar archivos en /uploads
+      operationId: lab3ListFiles
+      responses:
+        "200":
+          description: Lista de archivos disponibles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FileListEntry'
+
+  /lab3/files/{filename}:
+    get:
+      tags: [Lab 3 – Files]
+      summary: Descargar/streamear archivo por nombre
+      description: |
+        Devuelve el archivo como stream. También accesible vía la ruta estática `/uploads/{filename}`.
+        El header `Content-Disposition: inline` hace que el browser lo muestre en vez de descargarlo.
+      operationId: lab3ServeFile
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "1717200000000-123456789.jpg"
+      responses:
+        "200":
+          description: Stream del archivo
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Archivo no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Lab 3 – Files]
+      summary: Eliminar archivo del disco
+      operationId: lab3DeleteFile
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "1717200000000-123456789.jpg"
+      responses:
+        "200":
+          description: Archivo eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      filename:
+                        type: string
+                        example: "1717200000000-123456789.jpg"
+                  message:
+                    type: string
+                    example: "Archivo eliminado exitosamente"
+        "404":
+          description: Archivo no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB 3 – EVENTS
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab3/events/trigger:
+    post:
+      tags: [Lab 3 – Events]
+      summary: Emitir evento custom con EventEmitter2
+      description: Emite el evento especificado. Podés escuchar eventos del sistema también (ej. `post.created`, `file.uploaded`).
+      operationId: lab3TriggerEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerEventDto'
+            example:
+              event: "test.event"
+              payload:
+                msg: "hola desde Postman"
+                ts: 1717200000
+      responses:
+        "201":
+          description: Evento emitido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      emitted:
+                        type: string
+                        example: "test.event"
+
+  /lab3/events/log:
+    get:
+      tags: [Lab 3 – Events]
+      summary: Ver log de todos los eventos emitidos
+      description: Devuelve todos los eventos capturados desde que la app arrancó (almacenados en memoria).
+      operationId: lab3GetEventLog
+      responses:
+        "200":
+          description: Log de eventos en memoria
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventLogEntry'
+              examples:
+                ok:
+                  value:
+                    data:
+                      - event: "post.created"
+                        payload:
+                          postId: 1
+                          title: "Mi primer post"
+                          authorId: 1
+                        timestamp: "2026-06-01T12:00:00.000Z"
+                      - event: "file.uploaded"
+                        payload:
+                          filename: "1717200000000-123456789.jpg"
+                          mimetype: "image/jpeg"
+                          size: 204800
+                        timestamp: "2026-06-01T12:05:00.000Z"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # NORTHWIND – GET endpoints (solo lectura, synchronize: false)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /categories:
+    get:
+      tags: [Northwind – Categories]
+      summary: Listar todas las categorías
+      operationId: northwindGetCategories
+      responses:
+        "200":
+          description: Array de categorías ordenado por categoryId
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindCategory'
+
+  /suppliers:
+    get:
+      tags: [Northwind – Suppliers]
+      summary: Listar todos los proveedores
+      operationId: northwindGetSuppliers
+      responses:
+        "200":
+          description: Array de proveedores ordenado por supplierId
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindSupplier'
+
+  /customers:
+    get:
+      tags: [Northwind – Customers]
+      summary: Listar todos los clientes
+      operationId: northwindGetCustomers
+      responses:
+        "200":
+          description: Array de clientes ordenado por companyName
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindCustomer'
+
+  /customers/search:
+    get:
+      tags: [Northwind – Customers]
+      summary: Buscar clientes por nombre de empresa
+      operationId: northwindSearchCustomers
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "Alfreds"
+      responses:
+        "200":
+          description: Clientes que coinciden con el nombre
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindCustomer'
+
+  /customers/country/{country}:
+    get:
+      tags: [Northwind – Customers]
+      summary: Filtrar clientes por país
+      operationId: northwindGetCustomersByCountry
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "Germany"
+      responses:
+        "200":
+          description: Clientes del país indicado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindCustomer'
+
+  /customers/{id}:
+    get:
+      tags: [Northwind – Customers]
+      summary: Obtener cliente por ID (customer_id varchar)
+      operationId: northwindGetCustomerById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "ALFKI"
+      responses:
+        "200":
+          description: Cliente encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NorthwindCustomer'
+        "404":
+          description: Cliente no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /products:
+    get:
+      tags: [Northwind – Products]
+      summary: Listar todos los productos
+      operationId: northwindGetProducts
+      responses:
+        "200":
+          description: Array de productos ordenado por productName
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindProduct'
+
+  /products/search:
+    get:
+      tags: [Northwind – Products]
+      summary: Buscar productos por nombre
+      operationId: northwindSearchProducts
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "Chai"
+      responses:
+        "200":
+          description: Productos que coinciden con el nombre
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindProduct'
+
+  /products/category/{categoryId}:
+    get:
+      tags: [Northwind – Products]
+      summary: Filtrar productos por categoría
+      operationId: northwindGetProductsByCategory
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Productos de la categoría
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindProduct'
+
+  /products/supplier/{supplierId}:
+    get:
+      tags: [Northwind – Products]
+      summary: Filtrar productos por proveedor
+      operationId: northwindGetProductsBySupplier
+      parameters:
+        - name: supplierId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Productos del proveedor
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindProduct'
+
+  /products/{id}:
+    get:
+      tags: [Northwind – Products]
+      summary: Obtener producto por ID
+      operationId: northwindGetProductById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Producto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NorthwindProduct'
+        "404":
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /orders:
+    get:
+      tags: [Northwind – Orders]
+      summary: Listar todas las órdenes
+      operationId: northwindGetOrders
+      responses:
+        "200":
+          description: Array de órdenes ordenado por orderId DESC
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindOrder'
+
+  /orders/customer/{customerId}:
+    get:
+      tags: [Northwind – Orders]
+      summary: Listar órdenes de un cliente
+      operationId: northwindGetOrdersByCustomer
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "ALFKI"
+      responses:
+        "200":
+          description: Órdenes del cliente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindOrder'
+
+  /orders/employee/{employeeId}:
+    get:
+      tags: [Northwind – Orders]
+      summary: Listar órdenes atendidas por un empleado
+      operationId: northwindGetOrdersByEmployee
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Órdenes del empleado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindOrder'
+
+  /orders/{id}:
+    get:
+      tags: [Northwind – Orders]
+      summary: Obtener orden por ID
+      operationId: northwindGetOrderById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 10248
+      responses:
+        "200":
+          description: Orden encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NorthwindOrder'
+        "404":
+          description: Orden no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /order_details:
+    get:
+      tags: [Northwind – Order Details]
+      summary: Listar todos los detalles de órdenes
+      description: Clave primaria compuesta — cada fila corresponde a un producto dentro de una orden.
+      operationId: northwindGetOrderDetails
+      responses:
+        "200":
+          description: Array de order_details ordenado por orderId
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindOrderDetail'
+
+  /employees:
+    get:
+      tags: [Northwind – Employees]
+      summary: Listar todos los empleados
+      operationId: northwindGetEmployees
+      responses:
+        "200":
+          description: Array de empleados ordenado por employeeId
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindEmployee'
+
+  /shippers:
+    get:
+      tags: [Northwind – Shippers]
+      summary: Listar todos los transportistas
+      operationId: northwindGetShippers
+      responses:
+        "200":
+          description: Array de shippers ordenado por shipperId
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindShipper'
+
+  /territories:
+    get:
+      tags: [Northwind – Territories]
+      summary: Listar todos los territorios
+      operationId: northwindGetTerritories
+      responses:
+        "200":
+          description: Array de territorios ordenado por territoryId
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindTerritory'
+
+  /region:
+    get:
+      tags: [Northwind – Region]
+      summary: Listar todas las regiones
+      operationId: northwindGetRegion
+      responses:
+        "200":
+          description: Array de regiones ordenado por regionId
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindRegion'
+
+  /employee_territories:
+    get:
+      tags: [Northwind – Employee Territories]
+      summary: Listar todas las asignaciones empleado–territorio
+      description: Tabla de unión entre `employees` y `territories`. Clave compuesta.
+      operationId: northwindGetEmployeeTerritories
+      responses:
+        "200":
+          description: Array de asignaciones ordenado por employeeId
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindEmployeeTerritory'
+
+  /customer_demographics:
+    get:
+      tags: [Northwind – Customer Demographics]
+      summary: Listar todos los tipos de cliente
+      operationId: northwindGetCustomerDemographics
+      responses:
+        "200":
+          description: Array de customer_demographics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindCustomerDemographic'
+
+  /customer_customer_demo:
+    get:
+      tags: [Northwind – Customer Customer Demo]
+      summary: Listar todas las asignaciones cliente–tipo
+      description: Tabla de unión entre `customers` y `customer_demographics`. Clave compuesta.
+      operationId: northwindGetCustomerCustomerDemo
+      responses:
+        "200":
+          description: Array de customer_customer_demo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindCustomerCustomerDemo'
+
+  /us_states:
+    get:
+      tags: [Northwind – US States]
+      summary: Listar todos los estados de EE.UU.
+      operationId: northwindGetUsStates
+      responses:
+        "200":
+          description: Array de us_states ordenado por stateId
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NorthwindUsState'

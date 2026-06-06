@@ -1,39 +1,38 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { CustomersService } from './customers.service';
-import { CreateCustomersDTO } from './DTO/CreateCustomersDTO';
+import { CreateCustomerDto } from './DTO/CreateCustomersDTO';
 
-@Controller("customers")
+@Controller('customers')
 export class CustomersController {
-  constructor(private readonly appService: CustomersService ) {}
+  constructor(private readonly customersService: CustomersService) {}
 
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  findAll() {
+    return this.customersService.findAll();
   }
 
-  @Get()
-  getAll() {
-    return this.appService.getAll();
+  @Get('search')
+  findByCompany(@Query('name') name: string) {
+    return this.customersService.findByCompany(name);
   }
 
-  @Get('name/:name')
-  async getCustomerByName(@Param('name') name: string) {
-    return this.appService.getByName(name);
+  @Get('country/:country')
+  findByCountry(@Param('country') country: string) {
+    return this.customersService.findByCountry(country);
   }
 
-  @Get('type/:type')
-  async getCustomerByType(@Param('type') type: string) {
-    return this.appService.getByType(type);
+  @Get(':id')
+  findById(@Param('id') id: string) {
+    return this.customersService.findById(id);
   }
 
   @Post()
-  //async createCustomer(@Body() createEquipoDto: CreateCustomersDTO) {
-   // return this.appService.createCustomers(createEquipoDto);
- // }
-
+  create(@Body() dto: CreateCustomerDto) {
+    return this.customersService.create(dto);
+  }
 
   @Delete(':id')
-  async deleteCustomer(@Param('id', ParseIntPipe) id: number) {
-    return this.appService.deleteCustomers(id);
+  delete(@Param('id') id: string) {
+    return this.customersService.delete(id);
   }
 }

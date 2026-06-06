@@ -1,50 +1,65 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-// import { ILike, Repository } from 'typeorm';
-// import { InjectRepository } from '@nestjs/typeorm';
-// import { ProductsEntity } from './products.entity';
-import { CreateProductDTO } from './DTO/CreateProductDTO';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ILike, Repository } from 'typeorm';
+import { Product } from './products.entity';
+import { CreateProductDto } from './DTO/CreateProductDTO';
 
 @Injectable()
 export class ProductsService {
+  constructor(
+    @InjectRepository(Product, 'northwind')
+    private readonly productsRepo: Repository<Product>,
+  ) {}
 
-  // constructor(
-  //   @InjectRepository(ProductsEntity)
-  //   private readonly productsRepository: Repository<ProductsEntity>,
-  // ) {}
-
-  getHello(): string {
-    return 'Hello World! Products';
+  findAll(): Promise<Product[]> {
+    return this.productsRepo.find({ order: { productName: 'ASC' } });
   }
 
-  getAll() {
-    // return this.productsRepository.find();
+  async findById(productId: number): Promise<Product> {
+    const product = await this.productsRepo.findOneBy({ productId });
+    if (!product) throw new NotFoundException(`Producto con id ${productId} no encontrado`);
+    return product;
   }
 
-  getByName(nombre: string) {
-    if (!nombre) {
-      throw new NotFoundException(`Producto con nombre ${nombre} no encontrado`);
-    }
-    // return this.productsRepository.find({
-    //   where: { nombre: ILike(`%${nombre}%`) },
-    // });
+  findByName(name: string): Promise<Product[]> {
+    return this.productsRepo.find({
+      where: { productName: ILike(`%${name}%`) },
+      order: { productName: 'ASC' },
+    });
   }
 
-  getByType(tipo: string) {
-    // return this.productsRepository.find({
-    //   where: { tipo: ILike(`%${tipo}%`) },
-    // });
+  findByCategory(categoryId: number): Promise<Product[]> {
+    return this.productsRepo.find({
+      where: { categoryId },
+      order: { productName: 'ASC' },
+    });
   }
 
-  async createProduct(createProductDto: CreateProductDTO) {
-    // const product = this.productsRepository.create(createProductDto as any);
-    // return this.productsRepository.save(product);
+  findBySupplier(supplierId: number): Promise<Product[]> {
+    return this.productsRepo.find({
+      where: { supplierId },
+      order: { productName: 'ASC' },
+    });
   }
 
-  async deleteProduct(id: number): Promise<void> {
-    // const product = await this.productsRepository.findOneBy({ id });
-    // if (!product) {
-    //   throw new NotFoundException(`Producto con id ${id} no encontrado`);
-    // }
-    // await this.productsRepository.delete(id);
+  async create(dto: CreateProductDto): Promise<Product> {
+    const product = this.productsRepo.create({
+      productName: dto.productName,
+      supplierId: dto.supplierId ?? null,
+      categoryId: dto.categoryId ?? null,
+      quantityPerUnit: dto.quantityPerUnit ?? null,
+      unitPrice: dto.unitPrice ?? null,
+      unitsInStock: dto.unitsInStock ?? null,
+      unitsOnOrder: dto.unitsOnOrder ?? null,
+      reorderLevel: dto.reorderLevel ?? null,
+      discontinued: dto.discontinued ?? 0,
+    });
+    return this.productsRepo.save(product);
+  }
+
+  async delete(productId: number): Promise<void> {
+    const product = await this.productsRepo.findOneBy({ productId });
+    if (!product) throw new NotFoundException(`Producto con id ${productId} no encontrado`);
+    await this.productsRepo.delete({ productId });
   }
 }

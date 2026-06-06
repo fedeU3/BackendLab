@@ -1,32 +1,38 @@
-import { Controller, Delete, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { OrdersService } from './orders.service';
+import { CreateOrderDto } from './DTO/CreateOrdersDTO';
 
-@Controller('Orders')
+@Controller('orders')
 export class OrdersController {
-  constructor(private readonly appService: OrdersService) {}
+  constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
-  getHello(): string {
-    return 'Hello World! Orders';
+  findAll() {
+    return this.ordersService.findAll();
   }
 
-  @Get('name/:name')
-  async getByName(@Param('name') name: string) {
-    return this.appService.getByName(name);
+  @Get('customer/:customerId')
+  findByCustomer(@Param('customerId') customerId: string) {
+    return this.ordersService.findByCustomer(customerId);
   }
 
-  @Get('type/:type')
-  async getByType(@Param('type') type: string) {
-    return this.appService.getByType(type);
+  @Get('employee/:employeeId')
+  findByEmployee(@Param('employeeId', ParseIntPipe) employeeId: number) {
+    return this.ordersService.findByEmployee(employeeId);
   }
 
-  // @Post()
-  //async create(@Body() createDto: CreateOrdersDTO) {
-  // return this.appService.createOrders(createDto);
-  //}
+  @Get(':id')
+  findById(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.findById(id);
+  }
+
+  @Post()
+  create(@Body() dto: CreateOrderDto) {
+    return this.ordersService.create(dto);
+  }
 
   @Delete(':id')
-  async delete(@Param('id', ParseIntPipe) id: number) {
-    return this.appService.deleteOrders(id);
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.delete(id);
   }
 }

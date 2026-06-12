@@ -29,4 +29,16 @@ export class QueryDto {
   @IsOptional()
   @IsString()
   sort?: string;
+
+  @ApiPropertyOptional({ example: 'federico' })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional({ example: 30 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Type(() => Number)
+  age?: number;
 }

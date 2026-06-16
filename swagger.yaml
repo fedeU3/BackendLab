@@ -758,62 +758,6 @@ components:
           nullable: true
           example: "south"
 
-tags:
-  - name: General
-    description: Endpoints raíz de la aplicación
-  - name: Lab 1 – Demo
-    description: Demostración de `@Param`, `@Query`, `@Body`, `@Headers` y `@HttpCode`
-  - name: Lab 1 – Products
-    description: CRUD completo de productos **en memoria** (no persiste en DB)
-  - name: Lab 2 – Pipes
-    description: ParseIntPipe, ParseUUIDPipe y pipe custom de transformación
-  - name: Lab 2 – Guards
-    description: ApiKeyGuard (`x-api-key`) y RolesGuard (`x-user-role`)
-  - name: Lab 2 – Interceptors
-    description: LoggingInterceptor, TransformInterceptor y TimeoutInterceptor
-  - name: Lab 2 – Exceptions
-    description: Exception filters y formato de error estandarizado
-  - name: Lab 2 – Decorators
-    description: Decoradores custom `@CurrentUser`, `@Public` y `@Throttle`
-  - name: Lab 2 – Middleware
-    description: RequestIdMiddleware — agrega `x-request-id` a cada request
-  - name: Lab 3 – Auth
-    description: Registro y login con JWT. Usuarios semilla — admin@lab3.com/admin123, user@lab3.com/user123
-  - name: Lab 3 – Posts
-    description: CRUD de posts protegido con JWT. Un post nace como borrador y se publica explícitamente.
-  - name: Lab 3 – Files
-    description: Upload con Multer (JPEG/PNG/GIF/WebP/PDF, máx 5 MB) y streaming de descarga
-  - name: Lab 3 – Events
-    description: EventEmitter2 — emisión de eventos y log en memoria
-  - name: Northwind – Categories
-    description: Tabla `categories`
-  - name: Northwind – Suppliers
-    description: Tabla `suppliers`
-  - name: Northwind – Customers
-    description: Tabla `customers`
-  - name: Northwind – Products
-    description: Tabla `products`
-  - name: Northwind – Orders
-    description: Tabla `orders`
-  - name: Northwind – Order Details
-    description: Tabla `order_details` (clave compuesta order_id + product_id)
-  - name: Northwind – Employees
-    description: Tabla `employees`
-  - name: Northwind – Shippers
-    description: Tabla `shippers`
-  - name: Northwind – Territories
-    description: Tabla `territories`
-  - name: Northwind – Region
-    description: Tabla `region`
-  - name: Northwind – Employee Territories
-    description: Tabla `employee_territories`
-  - name: Northwind – Customer Demographics
-    description: Tabla `customer_demographics`
-  - name: Northwind – Customer Customer Demo
-    description: Tabla `customer_customer_demo`
-  - name: Northwind – US States
-    description: Tabla `us_states`
-
 paths:
 
   # ═══════════════════════════════════════════════════════════════════════════
@@ -822,7 +766,8 @@ paths:
 
   /home:
     get:
-      tags: [General]
+      tags:
+        - General
       summary: Hello World — health check
       description: Endpoint raíz definido en `AppController`. Devuelve un string de bienvenida.
       operationId: getHello
@@ -841,7 +786,8 @@ paths:
 
   /lab1/demo/params/{id}:
     get:
-      tags: [Lab 1 – Demo]
+      tags:
+        - Lab 1 – Demo
       summary: "@Param + ParseIntPipe"
       description: Extrae `:id` del path y lo convierte a número entero. Devuelve 400 si el valor no es parseable como entero.
       operationId: demoParams
@@ -894,7 +840,8 @@ paths:
 
   /lab1/demo/query:
     get:
-      tags: [Lab 1 – Demo]
+      tags:
+        - Lab 1 – Demo
       summary: "@Query tipado con DTO (page, limit, sort)"
       description: |
         Recibe query params y los transforma al tipo correcto gracias a `class-transformer` + `transform: true` en `ValidationPipe`.
@@ -941,58 +888,10 @@ paths:
                         type: string
                         example: "name"
 
-  /lab1/demo/body:
-    post:
-      tags: [Lab 1 – Demo]
-      summary: "@Body con objeto anidado y validación recursiva"
-      description: |
-        Demuestra `@ValidateNested()` + `@Type(() => AddressDto)` para validar objetos embebidos.
-        Sin esas anotaciones, `class-validator` no inspecciona las propiedades del sub-objeto.
-      operationId: demoBody
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DemoBodyDto'
-            examples:
-              valido:
-                value:
-                  name: "John Doe"
-                  age: 25
-                  address:
-                    street: "123 Main St"
-                    city: "New York"
-              faltaCity:
-                summary: Falta city en address → 400
-                value:
-                  name: "John Doe"
-                  age: 25
-                  address:
-                    street: "123 Main St"
-      responses:
-        "201":
-          description: Body recibido y validado
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/DemoBodyDto'
-                  message:
-                    type: string
-                    example: "Body recibido y validado correctamente"
-        "400":
-          description: Error de validación
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-
   /lab1/demo/headers:
     get:
-      tags: [Lab 1 – Demo]
+      tags:
+        - Lab 1 – Demo
       summary: "@Headers — leer el header Authorization"
       description: Lee el header `Authorization` con `@Headers('authorization')`. Enviá cualquier valor para verlo reflejado en la respuesta.
       operationId: demoHeaders
@@ -1021,44 +920,14 @@ paths:
                         type: string
                         example: "Leído con @Headers(\"authorization\")"
 
-  /lab1/demo/status:
-    get:
-      tags: [Lab 1 – Demo]
-      summary: "@HttpCode(202) + @Header — status code y header custom"
-      description: |
-        Demuestra que el status code puede ser cualquier valor con `@HttpCode()`.
-        Revisá los **Response Headers** para ver `X-Custom: value`.
-      operationId: demoStatus
-      responses:
-        "202":
-          description: Accepted — revisá el header X-Custom en la respuesta
-          headers:
-            X-Custom:
-              schema:
-                type: string
-                example: "value"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      statusCode:
-                        type: integer
-                        example: 202
-                      note:
-                        type: string
-                        example: "Revisá el header X-Custom en Response headers"
-
   # ═══════════════════════════════════════════════════════════════════════════
   # LAB 1 – PRODUCTS (in-memory CRUD)
   # ═══════════════════════════════════════════════════════════════════════════
 
   /lab1/products:
     get:
-      tags: [Lab 1 – Products]
+      tags:
+        - Lab 1 – Products
       summary: Listar productos
       description: Devuelve todos los productos. Soporta filtros opcionales por nombre y categoría. Los datos viven en memoria — se reinician al reiniciar la app.
       operationId: lab1FindAllProducts
@@ -1089,7 +958,8 @@ paths:
                       $ref: '#/components/schemas/Lab1Product'
 
     post:
-      tags: [Lab 1 – Products]
+      tags:
+        - Lab 1 – Products
       summary: Crear producto
       operationId: lab1CreateProduct
       requestBody:
@@ -1134,7 +1004,8 @@ paths:
 
   /lab1/products/{id}:
     get:
-      tags: [Lab 1 – Products]
+      tags:
+        - Lab 1 – Products
       summary: Obtener producto por ID
       operationId: lab1FindOneProduct
       parameters:
@@ -1162,7 +1033,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     patch:
-      tags: [Lab 1 – Products]
+      tags:
+        - Lab 1 – Products
       summary: Actualizar producto parcialmente (PATCH)
       description: Solo enviá los campos que querés modificar. PATCH es actualización parcial, no reemplaza el recurso completo (que sería PUT).
       operationId: lab1UpdateProduct
@@ -1203,7 +1075,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     delete:
-      tags: [Lab 1 – Products]
+      tags:
+        - Lab 1 – Products
       summary: Eliminar producto
       operationId: lab1DeleteProduct
       parameters:
@@ -1239,7 +1112,8 @@ paths:
 
   /lab2/pipes/parse-int/{value}:
     get:
-      tags: [Lab 2 – Pipes]
+      tags:
+        - Lab 2 – Pipes
       summary: ParseIntPipe — coerce string a entero
       description: Si el valor no es parseable como entero, NestJS responde 400 automáticamente sin llegar al handler.
       operationId: lab2ParseInt
@@ -1280,7 +1154,8 @@ paths:
 
   /lab2/pipes/parse-uuid/{id}:
     get:
-      tags: [Lab 2 – Pipes]
+      tags:
+        - Lab 2 – Pipes
       summary: ParseUUIDPipe — valida UUID v4
       operationId: lab2ParseUuid
       parameters:
@@ -1321,7 +1196,8 @@ paths:
 
   /lab2/pipes/custom/{value}:
     get:
-      tags: [Lab 2 – Pipes]
+      tags:
+        - Lab 2 – Pipes
       summary: CustomUppercasePipe — transforma a MAYÚSCULAS
       description: Pipe personalizado que toma el string del param y lo convierte a uppercase antes de que llegue al handler.
       operationId: lab2CustomPipe
@@ -1352,7 +1228,8 @@ paths:
 
   /lab2/pipes/validate:
     post:
-      tags: [Lab 2 – Pipes]
+      tags:
+        - Lab 2 – Pipes
       summary: ValidationPipe vía DTO — valida body y transforma tipos
       operationId: lab2ValidatePipe
       requestBody:
@@ -1394,7 +1271,8 @@ paths:
 
   /lab2/guards/public:
     get:
-      tags: [Lab 2 – Guards]
+      tags:
+        - Lab 2 – Guards
       summary: Ruta pública — sin guard
       operationId: lab2GuardPublic
       responses:
@@ -1417,7 +1295,8 @@ paths:
 
   /lab2/guards/protected:
     get:
-      tags: [Lab 2 – Guards]
+      tags:
+        - Lab 2 – Guards
       summary: ApiKeyGuard — requiere header `x-api-key`
       description: |
         Guard que lee el header `x-api-key`. Solo acepta el valor `lab2-secret`.
@@ -1462,7 +1341,8 @@ paths:
 
   /lab2/guards/protected-roles:
     get:
-      tags: [Lab 2 – Guards]
+      tags:
+        - Lab 2 – Guards
       summary: ApiKeyGuard + RolesGuard — requiere API key Y rol admin
       description: |
         Aplica dos guards en cadena:
@@ -1525,7 +1405,8 @@ paths:
 
   /lab2/interceptors/logging:
     get:
-      tags: [Lab 2 – Interceptors]
+      tags:
+        - Lab 2 – Interceptors
       summary: LoggingInterceptor — loguea tiempo de respuesta en consola
       description: El interceptor registra `[GET /lab2/interceptors/logging] Xms` en la consola del servidor.
       operationId: lab2InterceptorLogging
@@ -1539,7 +1420,8 @@ paths:
 
   /lab2/interceptors/transform:
     get:
-      tags: [Lab 2 – Interceptors]
+      tags:
+        - Lab 2 – Interceptors
       summary: TransformInterceptor — envuelve la respuesta con timestamp y success
       description: |
         Demuestra el patrón de envolver respuestas en un sobre estándar:
@@ -1564,7 +1446,8 @@ paths:
 
   /lab2/interceptors/timeout:
     get:
-      tags: [Lab 2 – Interceptors]
+      tags:
+        - Lab 2 – Interceptors
       summary: TimeoutInterceptor — cancela requests que tardan demasiado
       description: Si el handler no responde dentro del tiempo configurado, devuelve 408 Request Timeout.
       operationId: lab2InterceptorTimeout
@@ -1588,7 +1471,8 @@ paths:
 
   /lab2/exceptions/not-found:
     get:
-      tags: [Lab 2 – Exceptions]
+      tags:
+        - Lab 2 – Exceptions
       summary: Lanza NotFoundException → 404
       operationId: lab2ExceptionNotFound
       responses:
@@ -1601,7 +1485,8 @@ paths:
 
   /lab2/exceptions/forbidden:
     get:
-      tags: [Lab 2 – Exceptions]
+      tags:
+        - Lab 2 – Exceptions
       summary: Lanza ForbiddenException → 403
       operationId: lab2ExceptionForbidden
       responses:
@@ -1614,7 +1499,8 @@ paths:
 
   /lab2/exceptions/custom:
     get:
-      tags: [Lab 2 – Exceptions]
+      tags:
+        - Lab 2 – Exceptions
       summary: Lanza excepción custom
       operationId: lab2ExceptionCustom
       responses:
@@ -1627,7 +1513,8 @@ paths:
 
   /lab2/exceptions/validate:
     post:
-      tags: [Lab 2 – Exceptions]
+      tags:
+        - Lab 2 – Exceptions
       summary: ValidationPipe — campo requerido
       description: Enviá un body sin `requiredField` para ver el error de validación formateado por el HttpExceptionFilter.
       operationId: lab2ExceptionValidate
@@ -1671,7 +1558,8 @@ paths:
 
   /lab2/decorators/user:
     get:
-      tags: [Lab 2 – Decorators]
+      tags:
+        - Lab 2 – Decorators
       summary: "@CurrentUser() — extrae x-user-id del header"
       description: Decorator custom que lee el header `x-user-id` y lo inyecta como parámetro del handler.
       operationId: lab2DecoratorUser
@@ -1702,7 +1590,8 @@ paths:
 
   /lab2/decorators/public:
     get:
-      tags: [Lab 2 – Decorators]
+      tags:
+        - Lab 2 – Decorators
       summary: "@Public() — ruta marcada como pública con metadata"
       operationId: lab2DecoratorPublic
       responses:
@@ -1715,7 +1604,8 @@ paths:
 
   /lab2/decorators/throttled:
     get:
-      tags: [Lab 2 – Decorators]
+      tags:
+        - Lab 2 – Decorators
       summary: "@Throttle(10, 60) — rate limit configurado vía metadata"
       description: Un `ThrottleGuard` podría leer esta metadata para aplicar rate limiting de 10 requests/60s.
       operationId: lab2DecoratorThrottled
@@ -1733,7 +1623,8 @@ paths:
 
   /lab2/middleware/request-id:
     get:
-      tags: [Lab 2 – Middleware]
+      tags:
+        - Lab 2 – Middleware
       summary: RequestIdMiddleware — agrega x-request-id a la respuesta
       description: Revisá los **Response Headers** — el middleware agrega `x-request-id` con un UUID único por request.
       operationId: lab2MiddlewareRequestId
@@ -1753,7 +1644,8 @@ paths:
 
   /lab2/middleware/logged:
     get:
-      tags: [Lab 2 – Middleware]
+      tags:
+        - Lab 2 – Middleware
       summary: Middleware de logging — registra el request en consola
       operationId: lab2MiddlewareLogged
       responses:
@@ -1770,7 +1662,8 @@ paths:
 
   /lab3/auth/register:
     post:
-      tags: [Lab 3 – Auth]
+      tags:
+        - Lab 3 – Auth
       summary: Registrar nuevo usuario
       operationId: lab3Register
       requestBody:
@@ -1814,7 +1707,8 @@ paths:
 
   /lab3/auth/login:
     post:
-      tags: [Lab 3 – Auth]
+      tags:
+        - Lab 3 – Auth
       summary: Iniciar sesión — devuelve JWT
       description: |
         Usuarios semilla disponibles:
@@ -1873,7 +1767,8 @@ paths:
 
   /lab3/posts:
     get:
-      tags: [Lab 3 – Posts]
+      tags:
+        - Lab 3 – Posts
       summary: Listar posts publicados (paginado)
       description: "Solo devuelve posts con `published: true`. Requiere JWT válido."
       operationId: lab3FindAllPosts
@@ -1914,7 +1809,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     post:
-      tags: [Lab 3 – Posts]
+      tags:
+        - Lab 3 – Posts
       summary: Crear post (nace como borrador)
       description: "El post se crea con `published: false`. Usá `PUT /:id/publish` para publicarlo."
       operationId: lab3CreatePost
@@ -1957,7 +1853,8 @@ paths:
 
   /lab3/posts/my:
     get:
-      tags: [Lab 3 – Posts]
+      tags:
+        - Lab 3 – Posts
       summary: Listar mis posts (publicados y borradores)
       description: Devuelve todos los posts del usuario autenticado, independientemente de su estado.
       operationId: lab3FindMyPosts
@@ -1984,7 +1881,8 @@ paths:
 
   /lab3/posts/{id}:
     get:
-      tags: [Lab 3 – Posts]
+      tags:
+        - Lab 3 – Posts
       summary: Obtener post por ID
       description: Devuelve el post si está publicado, o si el solicitante es el autor o un admin.
       operationId: lab3FindOnePost
@@ -2021,7 +1919,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     patch:
-      tags: [Lab 3 – Posts]
+      tags:
+        - Lab 3 – Posts
       summary: Actualizar post parcialmente
       description: Solo el autor o un admin pueden editar el post.
       operationId: lab3UpdatePost
@@ -2064,7 +1963,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     delete:
-      tags: [Lab 3 – Posts]
+      tags:
+        - Lab 3 – Posts
       summary: Eliminar post
       description: Solo el autor o un admin pueden eliminar el post.
       operationId: lab3DeletePost
@@ -2099,7 +1999,8 @@ paths:
 
   /lab3/posts/{id}/publish:
     put:
-      tags: [Lab 3 – Posts]
+      tags:
+        - Lab 3 – Posts
       summary: Alternar estado publicado/borrador
       description: Cambia `published` de `true` a `false` o viceversa. Solo el autor o un admin pueden hacerlo.
       operationId: lab3TogglePublish
@@ -2138,7 +2039,8 @@ paths:
 
   /lab3/files/upload:
     post:
-      tags: [Lab 3 – Files]
+      tags:
+        - Lab 3 – Files
       summary: Subir archivo (imagen o PDF, máx 5 MB)
       description: |
         Tipos MIME permitidos: `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `application/pdf`.
@@ -2203,7 +2105,8 @@ paths:
 
   /lab3/files:
     get:
-      tags: [Lab 3 – Files]
+      tags:
+        - Lab 3 – Files
       summary: Listar archivos en /uploads
       operationId: lab3ListFiles
       responses:
@@ -2221,7 +2124,8 @@ paths:
 
   /lab3/files/{filename}:
     get:
-      tags: [Lab 3 – Files]
+      tags:
+        - Lab 3 – Files
       summary: Descargar/streamear archivo por nombre
       description: |
         Devuelve el archivo como stream. También accesible vía la ruta estática `/uploads/{filename}`.
@@ -2258,7 +2162,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     delete:
-      tags: [Lab 3 – Files]
+      tags:
+        - Lab 3 – Files
       summary: Eliminar archivo del disco
       operationId: lab3DeleteFile
       parameters:
@@ -2298,7 +2203,8 @@ paths:
 
   /lab3/events/trigger:
     post:
-      tags: [Lab 3 – Events]
+      tags:
+        - Lab 3 – Events
       summary: Emitir evento custom con EventEmitter2
       description: Emite el evento especificado. Podés escuchar eventos del sistema también (ej. `post.created`, `file.uploaded`).
       operationId: lab3TriggerEvent
@@ -2330,7 +2236,8 @@ paths:
 
   /lab3/events/log:
     get:
-      tags: [Lab 3 – Events]
+      tags:
+        - Lab 3 – Events
       summary: Ver log de todos los eventos emitidos
       description: Devuelve todos los eventos capturados desde que la app arrancó (almacenados en memoria).
       operationId: lab3GetEventLog
@@ -2369,7 +2276,8 @@ paths:
 
   /categories:
     get:
-      tags: [Northwind – Categories]
+      tags:
+        - Northwind – Categories
       summary: Listar todas las categorías
       operationId: northwindGetCategories
       responses:
@@ -2384,7 +2292,8 @@ paths:
 
   /suppliers:
     get:
-      tags: [Northwind – Suppliers]
+      tags:
+        - Northwind – Suppliers
       summary: Listar todos los proveedores
       operationId: northwindGetSuppliers
       responses:
@@ -2399,7 +2308,8 @@ paths:
 
   /customers:
     get:
-      tags: [Northwind – Customers]
+      tags:
+        - Northwind – Customers
       summary: Listar todos los clientes
       operationId: northwindGetCustomers
       responses:
@@ -2414,7 +2324,8 @@ paths:
 
   /customers/search:
     get:
-      tags: [Northwind – Customers]
+      tags:
+        - Northwind – Customers
       summary: Buscar clientes por nombre de empresa
       operationId: northwindSearchCustomers
       parameters:
@@ -2436,7 +2347,8 @@ paths:
 
   /customers/country/{country}:
     get:
-      tags: [Northwind – Customers]
+      tags:
+        - Northwind – Customers
       summary: Filtrar clientes por país
       operationId: northwindGetCustomersByCountry
       parameters:
@@ -2458,7 +2370,8 @@ paths:
 
   /customers/{id}:
     get:
-      tags: [Northwind – Customers]
+      tags:
+        - Northwind – Customers
       summary: Obtener cliente por ID (customer_id varchar)
       operationId: northwindGetCustomerById
       parameters:
@@ -2484,7 +2397,8 @@ paths:
 
   /products:
     get:
-      tags: [Northwind – Products]
+      tags:
+        - Northwind – Products
       summary: Listar todos los productos
       operationId: northwindGetProducts
       responses:
@@ -2499,7 +2413,8 @@ paths:
 
   /products/search:
     get:
-      tags: [Northwind – Products]
+      tags:
+        - Northwind – Products
       summary: Buscar productos por nombre
       operationId: northwindSearchProducts
       parameters:
@@ -2521,7 +2436,8 @@ paths:
 
   /products/category/{categoryId}:
     get:
-      tags: [Northwind – Products]
+      tags:
+        - Northwind – Products
       summary: Filtrar productos por categoría
       operationId: northwindGetProductsByCategory
       parameters:
@@ -2543,7 +2459,8 @@ paths:
 
   /products/supplier/{supplierId}:
     get:
-      tags: [Northwind – Products]
+      tags:
+        - Northwind – Products
       summary: Filtrar productos por proveedor
       operationId: northwindGetProductsBySupplier
       parameters:
@@ -2565,7 +2482,8 @@ paths:
 
   /products/{id}:
     get:
-      tags: [Northwind – Products]
+      tags:
+        - Northwind – Products
       summary: Obtener producto por ID
       operationId: northwindGetProductById
       parameters:
@@ -2591,7 +2509,8 @@ paths:
 
   /orders:
     get:
-      tags: [Northwind – Orders]
+      tags:
+        - Northwind – Orders
       summary: Listar todas las órdenes
       operationId: northwindGetOrders
       responses:
@@ -2606,7 +2525,8 @@ paths:
 
   /orders/customer/{customerId}:
     get:
-      tags: [Northwind – Orders]
+      tags:
+        - Northwind – Orders
       summary: Listar órdenes de un cliente
       operationId: northwindGetOrdersByCustomer
       parameters:
@@ -2628,7 +2548,8 @@ paths:
 
   /orders/employee/{employeeId}:
     get:
-      tags: [Northwind – Orders]
+      tags:
+        - Northwind – Orders
       summary: Listar órdenes atendidas por un empleado
       operationId: northwindGetOrdersByEmployee
       parameters:
@@ -2650,7 +2571,8 @@ paths:
 
   /orders/{id}:
     get:
-      tags: [Northwind – Orders]
+      tags:
+        - Northwind – Orders
       summary: Obtener orden por ID
       operationId: northwindGetOrderById
       parameters:
@@ -2676,7 +2598,8 @@ paths:
 
   /order_details:
     get:
-      tags: [Northwind – Order Details]
+      tags:
+        - Northwind – Order Details
       summary: Listar todos los detalles de órdenes
       description: Clave primaria compuesta — cada fila corresponde a un producto dentro de una orden.
       operationId: northwindGetOrderDetails
@@ -2692,7 +2615,8 @@ paths:
 
   /employees:
     get:
-      tags: [Northwind – Employees]
+      tags:
+        - Northwind – Employees
       summary: Listar todos los empleados
       operationId: northwindGetEmployees
       responses:
@@ -2707,7 +2631,8 @@ paths:
 
   /shippers:
     get:
-      tags: [Northwind – Shippers]
+      tags:
+        - Northwind – Shippers
       summary: Listar todos los transportistas
       operationId: northwindGetShippers
       responses:
@@ -2722,7 +2647,8 @@ paths:
 
   /territories:
     get:
-      tags: [Northwind – Territories]
+      tags:
+        - Northwind – Territories
       summary: Listar todos los territorios
       operationId: northwindGetTerritories
       responses:
@@ -2737,7 +2663,8 @@ paths:
 
   /region:
     get:
-      tags: [Northwind – Region]
+      tags:
+        - Northwind – Region
       summary: Listar todas las regiones
       operationId: northwindGetRegion
       responses:
@@ -2752,7 +2679,8 @@ paths:
 
   /employee_territories:
     get:
-      tags: [Northwind – Employee Territories]
+      tags:
+        - Northwind – Employee Territories
       summary: Listar todas las asignaciones empleado–territorio
       description: Tabla de unión entre `employees` y `territories`. Clave compuesta.
       operationId: northwindGetEmployeeTerritories
@@ -2768,7 +2696,8 @@ paths:
 
   /customer_demographics:
     get:
-      tags: [Northwind – Customer Demographics]
+      tags:
+        - Northwind – Customer Demographics
       summary: Listar todos los tipos de cliente
       operationId: northwindGetCustomerDemographics
       responses:
@@ -2783,7 +2712,8 @@ paths:
 
   /customer_customer_demo:
     get:
-      tags: [Northwind – Customer Customer Demo]
+      tags:
+        - Northwind – Customer Customer Demo
       summary: Listar todas las asignaciones cliente–tipo
       description: Tabla de unión entre `customers` y `customer_demographics`. Clave compuesta.
       operationId: northwindGetCustomerCustomerDemo
@@ -2799,7 +2729,8 @@ paths:
 
   /us_states:
     get:
-      tags: [Northwind – US States]
+      tags:
+        - Northwind – US States
       summary: Listar todos los estados de EE.UU.
       operationId: northwindGetUsStates
       responses:

@@ -1,18 +1,31 @@
 openapi: 3.0.3
 info:
-  title: BackendLab API
+  title: BackendLab API — Clerkiva Edition
   description: |
-    API educativa con tres laboratorios independientes sobre NestJS + TypeORM.
+    ## BackendLab — Clerkiva Edition
 
-    **Lab 1 – Fundamentos**: Params, Query, Body, Headers, HttpCode y CRUD in-memory de productos.
-    **Lab 2 – Patrones**: Pipes, Guards, Interceptors, Exception Filters, Custom Decorators, Middleware.
-    **Lab 3 – Integraciones**: JWT Auth (PostgreSQL/TypeORM), Posts CRUD, File Upload, EventEmitter.
-    **Northwind**: Endpoints de lectura sobre las 14 tablas de la base Northwind en Supabase PostgreSQL.
+    ### Clerkiva (patrones reales implementados correctamente)
+    Los mismos patrones que usa Clerkiva en producción, pero aplicados bien:
+    `@Exclude` en password, ValidationPipe en DTOs, RolesGuard con los 4 roles reales.
 
-    ### Quick Start – Lab 3
-    1. `POST /lab3/auth/login` con `{ "email": "admin@lab3.com", "password": "admin123" }`
-    2. Copiá el `access_token` y usalo en el header `Authorization: Bearer <token>`
-  version: 1.0.0
+    **Quick Start:**
+    1. `POST /clerkiva/auth/login` con `{ "userID": "admin", "password": "admin123" }`
+    2. Copiá el token → **Authorize** → pegalo como Bearer
+    3. Usuarios disponibles: admin/admin123 (ADMIN), cajero01/cajero123 (CAJERO), consulta/consulta123 (CONSULTA), deposito/deposito123 (DEPOSITO)
+
+    ### Lab Clerkiva (funciones que Clerkiva no tiene)
+    Rate limiting, SSE en tiempo real, Cron jobs automáticos, Health check.
+
+    **Quick Start SSE:**
+    ```
+    curl -N http://localhost:3000/lab-clerkiva/caja/eventos
+    # En otra terminal:
+    curl -X POST http://localhost:3000/lab-clerkiva/caja/venta \
+      -H "Content-Type: application/json" \
+      -d '{"usuario":"cajero01","total":5000,"medioDePago":"efectivo"}'
+    ```
+
+  version: 2.0.0
 
 servers:
   - url: http://localhost:3000
@@ -24,7 +37,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Token JWT obtenido desde POST /lab3/auth/login
+      description: Token JWT obtenido desde POST /clerkiva/auth/login
 
   schemas:
 
@@ -53,1767 +66,489 @@ components:
           type: array
           items:
             type: string
-          example: ["name must be longer than or equal to 2 characters", "price must be a positive number"]
+          example: ["lineasVenta must contain at least 1 elements", "medioDePago must be a valid enum value"]
         error:
           type: string
           example: "Bad Request"
 
-    # ─── Lab 1 ────────────────────────────────────────────────────────────────
+    # ─── Clerkiva – Auth ──────────────────────────────────────────────────────
 
-    Lab1Product:
+    LoginRequest:
       type: object
+      required:
+        - userID
+        - password
       properties:
-        id:
-          type: integer
-          example: 1
-        name:
+        userID:
           type: string
-          example: "Laptop Pro 15"
-        price:
-          type: number
-          format: double
-          example: 999.99
-        category:
-          type: string
-          example: "Electronics"
-        stock:
-          type: integer
-          example: 100
-
-    Lab1CreateProductDto:
-      type: object
-      required: [name, price, category, stock]
-      properties:
-        name:
-          type: string
-          minLength: 2
-          maxLength: 50
-          example: "Laptop Pro 15"
-        price:
-          type: number
-          format: double
-          minimum: 0.01
-          example: 999.99
-        category:
-          type: string
-          example: "Electronics"
-        stock:
-          type: integer
-          minimum: 0
-          example: 100
-
-    Lab1UpdateProductDto:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 2
-          maxLength: 50
-          example: "Laptop Pro 15 (actualizado)"
-        price:
-          type: number
-          format: double
-          minimum: 0.01
-          example: 799.99
-        category:
-          type: string
-          example: "Electronics"
-        stock:
-          type: integer
-          minimum: 0
-          example: 50
-
-    DemoBodyDto:
-      type: object
-      required: [name, age, address]
-      properties:
-        name:
-          type: string
-          example: "John Doe"
-        age:
-          type: number
-          minimum: 1
-          example: 25
-        address:
-          type: object
-          required: [street, city]
-          description: Objeto anidado — requiere @ValidateNested() + @Type() en el DTO
-          properties:
-            street:
-              type: string
-              example: "123 Main St"
-            city:
-              type: string
-              example: "New York"
-
-    # ─── Lab 2 ────────────────────────────────────────────────────────────────
-
-    ValidatePipeDto:
-      type: object
-      required: [message, count]
-      properties:
-        message:
-          type: string
-          minLength: 1
-          example: "Hello World"
-        count:
-          type: integer
-          minimum: 1
-          example: 3
-
-    ValidateExceptionDto:
-      type: object
-      required: [requiredField]
-      properties:
-        requiredField:
-          type: string
-          minLength: 1
-          example: "algún valor"
-
-    # ─── Lab 3 ────────────────────────────────────────────────────────────────
-
-    CreateUserDto:
-      type: object
-      required: [email, password]
-      properties:
-        email:
-          type: string
-          format: email
-          example: "nuevo@ejemplo.com"
+          example: "admin"
+          description: Nombre de usuario (campo userID, mismo que Clerkiva real)
         password:
           type: string
-          minLength: 6
-          example: "password123"
-        role:
-          type: string
-          enum: [user, admin]
-          default: user
-          example: "user"
-
-    LoginDto:
-      type: object
-      required: [email, password]
-      properties:
-        email:
-          type: string
-          format: email
-          example: "admin@lab3.com"
-        password:
-          type: string
-          minLength: 6
           example: "admin123"
+          minLength: 6
 
-    AuthResponse:
+    LoginResponse:
       type: object
       properties:
-        access_token:
+        token:
           type: string
-          description: JWT firmado — válido 1 hora
           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-        user:
-          $ref: '#/components/schemas/UserResponse'
 
     UserResponse:
       type: object
+      description: |
+        Respuesta del usuario actual. password y token están EXCLUIDOS gracias a @Exclude()
+        en UserEntity. En Clerkiva real, estos campos viajan en la respuesta.
       properties:
         id:
           type: integer
           example: 1
-        email:
+        usuario:
           type: string
-          example: "admin@lab3.com"
-        role:
-          type: string
-          enum: [user, admin]
           example: "admin"
-        createdAt:
+        nombres:
           type: string
-          format: date-time
-          example: "2026-06-01T12:00:00.000Z"
+          example: "Federico"
+        apellidos:
+          type: string
+          example: "Admin"
+        rol:
+          type: string
+          enum: [ADMIN, CAJERO, CONSULTA, DEPOSITO]
+          example: "ADMIN"
+        sucursal:
+          type: string
+          example: "Central"
 
-    CreatePostDto:
+    # ─── Clerkiva – Ventas ────────────────────────────────────────────────────
+
+    LineaVentaRequest:
       type: object
-      required: [title, content]
+      required:
+        - productoId
+        - descripcion
+        - cantidad
+        - precioUnitario
       properties:
-        title:
+        productoId:
+          type: integer
+          minimum: 1
+          example: 1
+        descripcion:
           type: string
-          minLength: 3
-          maxLength: 200
-          example: "Mi primer post"
-        content:
-          type: string
-          minLength: 1
-          example: "Este es el contenido del post."
+          example: "Yerba Mate 1kg"
+        cantidad:
+          type: integer
+          minimum: 1
+          example: 2
+        precioUnitario:
+          type: number
+          minimum: 0.01
+          example: 1500
 
-    UpdatePostDto:
+    CreateVentaRequest:
+      type: object
+      required:
+        - lineasVenta
+        - medioDePago
+      properties:
+        lineasVenta:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/LineaVentaRequest'
+        medioDePago:
+          type: string
+          enum: [efectivo, tarjeta, transferencia]
+          example: "efectivo"
+
+    LineaVentaResponse:
       type: object
       properties:
-        title:
+        productoId:
+          type: integer
+          example: 1
+        descripcion:
           type: string
-          minLength: 3
-          maxLength: 200
-          example: "Título actualizado"
-        content:
-          type: string
-          example: "Contenido actualizado."
+          example: "Yerba Mate 1kg"
+        cantidad:
+          type: integer
+          example: 2
+        precioUnitario:
+          type: number
+          example: 1500
+        subtotal:
+          type: number
+          example: 3000
 
-    PostResponse:
+    VentaResponse:
       type: object
       properties:
         id:
           type: integer
           example: 1
-        title:
+        fecha:
           type: string
-          example: "Mi primer post"
-        content:
+          format: date-time
+          example: "2026-06-17T20:00:00.000Z"
+        usuario:
           type: string
-          example: "Este es el contenido del post."
-        published:
-          type: boolean
-          example: false
-        authorId:
+          example: "cajero01"
+        lineasVenta:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineaVentaResponse'
+        medioDePago:
+          type: string
+          enum: [efectivo, tarjeta, transferencia]
+          example: "efectivo"
+        total:
+          type: number
+          example: 3000
+
+    # ─── Clerkiva – Cajas ─────────────────────────────────────────────────────
+
+    AperturaCajaRequest:
+      type: object
+      required:
+        - saldoInicial
+      properties:
+        saldoInicial:
+          type: number
+          minimum: 0
+          example: 5000
+
+    CreateMovimientoRequest:
+      type: object
+      required:
+        - tipo
+        - monto
+        - descripcion
+      properties:
+        tipo:
+          type: string
+          enum: [ingreso, egreso]
+          example: "ingreso"
+        monto:
+          type: number
+          minimum: 0.01
+          example: 2000
+        descripcion:
+          type: string
+          example: "Venta en efectivo #1"
+
+    CierreCajaRequest:
+      type: object
+      required:
+        - saldoFinal
+      properties:
+        saldoFinal:
+          type: number
+          minimum: 0
+          example: 8500
+
+    SesionCajaResponse:
+      type: object
+      properties:
+        id:
           type: integer
           example: 1
-        createdAt:
+        abiertaEn:
           type: string
           format: date-time
-          example: "2026-06-01T12:00:00.000Z"
-        updatedAt:
+        saldoInicial:
+          type: number
+          example: 5000
+        movimientos:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              tipo:
+                type: string
+                enum: [ingreso, egreso]
+              monto:
+                type: number
+              descripcion:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+        cerradaEn:
           type: string
           format: date-time
-          example: "2026-06-01T12:00:00.000Z"
+          nullable: true
+        saldoFinal:
+          type: number
+          nullable: true
+          example: 8500
+        diferencia:
+          type: number
+          nullable: true
+          description: "saldoFinal - (saldoInicial + ingresos - egresos). Negativo = faltante."
+          example: 500
+        abierta:
+          type: boolean
+          example: true
 
-    TriggerEventDto:
-      type: object
-      required: [event, payload]
-      properties:
-        event:
-          type: string
-          example: "custom.event"
-        payload:
-          type: object
-          additionalProperties: true
-          example: { "key": "value", "info": "demo" }
+    # ─── Clerkiva – Reportes ──────────────────────────────────────────────────
 
-    EventLogEntry:
+    EmpleadoRankingItem:
       type: object
       properties:
-        event:
+        usuario:
           type: string
-          example: "post.created"
-        payload:
+          example: "cajero01"
+        cantVentas:
+          type: integer
+          example: 12
+        totalVendido:
+          type: number
+          example: 48000
+
+    ResumenDiarioResponse:
+      type: object
+      properties:
+        fecha:
+          type: string
+          example: "2026-06-17"
+        cantidadVentas:
+          type: integer
+          example: 15
+        totalVendido:
+          type: number
+          example: 75000
+        porMedioDePago:
           type: object
-          additionalProperties: true
+          example:
+            efectivo: 30000
+            tarjeta: 40000
+            transferencia: 5000
+
+    # ─── Lab Clerkiva ─────────────────────────────────────────────────────────
+
+    NuevaVentaRequest:
+      type: object
+      required:
+        - usuario
+        - total
+        - medioDePago
+      properties:
+        usuario:
+          type: string
+          example: "cajero01"
+        total:
+          type: number
+          minimum: 0.01
+          example: 5000
+        medioDePago:
+          type: string
+          enum: [efectivo, tarjeta, transferencia]
+          example: "efectivo"
+
+    EventoVentaSSE:
+      type: object
+      description: Evento emitido a través del stream SSE cuando se registra una venta
+      properties:
+        id:
+          type: integer
+          example: 1
+        usuario:
+          type: string
+          example: "cajero01"
+        total:
+          type: number
+          example: 5000
+        medioDePago:
+          type: string
+          example: "efectivo"
         timestamp:
           type: string
           format: date-time
-          example: "2026-06-01T12:00:00.000Z"
+          example: "2026-06-17T20:30:00.000Z"
 
-    UploadedFileResponse:
+    SaludResponse:
       type: object
       properties:
-        filename:
+        status:
           type: string
-          description: Nombre único generado en el servidor
-          example: "1717200000000-123456789.jpg"
-        originalname:
-          type: string
-          example: "foto.jpg"
-        mimetype:
-          type: string
-          example: "image/jpeg"
-        size:
-          type: integer
-          description: Tamaño en bytes
-          example: 204800
-        url:
-          type: string
-          example: "/uploads/1717200000000-123456789.jpg"
-
-    FileListEntry:
-      type: object
-      properties:
-        filename:
-          type: string
-          example: "1717200000000-123456789.jpg"
-        size:
-          type: integer
-          example: 204800
-        url:
-          type: string
-          example: "/uploads/1717200000000-123456789.jpg"
-        uploadedAt:
+          example: "ok"
+        uptime:
+          type: object
+          properties:
+            segundos:
+              type: integer
+              example: 3600
+            legible:
+              type: string
+              example: "1h 0m 0s"
+        memoria:
+          type: object
+          properties:
+            usada:
+              type: string
+              example: "95 MB"
+            total:
+              type: string
+              example: "120 MB"
+            porcentaje:
+              type: string
+              example: "79%"
+        proceso:
+          type: object
+          properties:
+            nodeVersion:
+              type: string
+              example: "v22.5.0"
+            pid:
+              type: integer
+              example: 12345
+            plataforma:
+              type: string
+              example: "darwin"
+        timestamp:
           type: string
           format: date-time
-          example: "2026-06-01T12:00:00.000Z"
 
-    # ─── Northwind ────────────────────────────────────────────────────────────
-
-    NorthwindCategory:
+    LogEntryResponse:
       type: object
       properties:
-        categoryId:
-          type: integer
-          example: 1
-        categoryName:
+        tarea:
           type: string
-          example: "Beverages"
-        description:
+          example: "Chequeo Stock Mínimo"
+        ejecutadaEn:
           type: string
-          nullable: true
-          example: "Soft drinks, coffees, teas, beers, and ales"
-        picture:
+          format: date-time
+        resultado:
           type: string
-          format: byte
-          nullable: true
-          description: Imagen binaria (bytea)
-
-    NorthwindSupplier:
-      type: object
-      properties:
-        supplierId:
-          type: integer
-          example: 1
-        companyName:
-          type: string
-          example: "Exotic Liquids"
-        contactName:
-          type: string
-          nullable: true
-          example: "Charlotte Cooper"
-        contactTitle:
-          type: string
-          nullable: true
-          example: "Purchasing Manager"
-        address:
-          type: string
-          nullable: true
-          example: "49 Gilbert St."
-        city:
-          type: string
-          nullable: true
-          example: "London"
-        region:
-          type: string
-          nullable: true
-          example: null
-        postalCode:
-          type: string
-          nullable: true
-          example: "EC1 4SD"
-        country:
-          type: string
-          nullable: true
-          example: "UK"
-        phone:
-          type: string
-          nullable: true
-          example: "(171) 555-2222"
-        fax:
-          type: string
-          nullable: true
-          example: null
-        homepage:
-          type: string
-          nullable: true
-          example: null
-
-    NorthwindCustomer:
-      type: object
-      properties:
-        customerId:
-          type: string
-          description: Clave natural de 5 caracteres (ej. "ALFKI")
-          example: "ALFKI"
-        companyName:
-          type: string
-          example: "Alfreds Futterkiste"
-        contactName:
-          type: string
-          nullable: true
-          example: "Maria Anders"
-        contactTitle:
-          type: string
-          nullable: true
-          example: "Sales Representative"
-        address:
-          type: string
-          nullable: true
-          example: "Obere Str. 57"
-        city:
-          type: string
-          nullable: true
-          example: "Berlin"
-        region:
-          type: string
-          nullable: true
-          example: null
-        postalCode:
-          type: string
-          nullable: true
-          example: "12209"
-        country:
-          type: string
-          nullable: true
-          example: "Germany"
-        phone:
-          type: string
-          nullable: true
-          example: "030-0074321"
-        fax:
-          type: string
-          nullable: true
-          example: "030-0076545"
-
-    NorthwindProduct:
-      type: object
-      properties:
-        productId:
-          type: integer
-          example: 1
-        productName:
-          type: string
-          example: "Chai"
-        supplierId:
-          type: integer
-          nullable: true
-          example: 1
-        categoryId:
-          type: integer
-          nullable: true
-          example: 1
-        quantityPerUnit:
-          type: string
-          nullable: true
-          example: "10 boxes x 20 bags"
-        unitPrice:
-          type: number
-          format: double
-          nullable: true
-          example: 18.00
-        unitsInStock:
-          type: integer
-          nullable: true
-          example: 39
-        unitsOnOrder:
-          type: integer
-          nullable: true
-          example: 0
-        reorderLevel:
-          type: integer
-          nullable: true
-          example: 10
-        discontinued:
-          type: integer
-          description: "0 = activo, 1 = descontinuado"
-          example: 0
-
-    NorthwindOrder:
-      type: object
-      properties:
-        orderId:
-          type: integer
-          example: 10248
-        customerId:
-          type: string
-          nullable: true
-          example: "VINET"
-        employeeId:
-          type: integer
-          nullable: true
-          example: 5
-        orderDate:
-          type: string
-          format: date
-          nullable: true
-          example: "1996-07-04"
-        requiredDate:
-          type: string
-          format: date
-          nullable: true
-          example: "1996-08-01"
-        shippedDate:
-          type: string
-          format: date
-          nullable: true
-          example: "1996-07-16"
-        shipVia:
-          type: integer
-          nullable: true
-          description: FK hacia shippers.shipperId
-          example: 3
-        freight:
-          type: number
-          format: double
-          nullable: true
-          example: 32.38
-        shipName:
-          type: string
-          nullable: true
-          example: "Vins et alcools Chevalier"
-        shipAddress:
-          type: string
-          nullable: true
-          example: "59 rue de l'Abbaye"
-        shipCity:
-          type: string
-          nullable: true
-          example: "Reims"
-        shipRegion:
-          type: string
-          nullable: true
-          example: null
-        shipPostalCode:
-          type: string
-          nullable: true
-          example: "51100"
-        shipCountry:
-          type: string
-          nullable: true
-          example: "France"
-
-    NorthwindOrderDetail:
-      type: object
-      description: Clave primaria compuesta (orderId + productId)
-      properties:
-        orderId:
-          type: integer
-          example: 10248
-        productId:
-          type: integer
-          example: 11
-        unitPrice:
-          type: number
-          format: double
-          example: 14.00
-        quantity:
-          type: integer
-          example: 12
-        discount:
-          type: number
-          format: float
-          example: 0.0
-
-    NorthwindEmployee:
-      type: object
-      properties:
-        employeeId:
-          type: integer
-          example: 1
-        lastName:
-          type: string
-          example: "Davolio"
-        firstName:
-          type: string
-          example: "Nancy"
-        title:
-          type: string
-          nullable: true
-          example: "Sales Representative"
-        titleOfCourtesy:
-          type: string
-          nullable: true
-          example: "Ms."
-        birthDate:
-          type: string
-          format: date
-          nullable: true
-          example: "1948-12-08"
-        hireDate:
-          type: string
-          format: date
-          nullable: true
-          example: "1992-05-01"
-        address:
-          type: string
-          nullable: true
-          example: "507 - 20th Ave. E."
-        city:
-          type: string
-          nullable: true
-          example: "Seattle"
-        region:
-          type: string
-          nullable: true
-          example: "WA"
-        postalCode:
-          type: string
-          nullable: true
-          example: "98122"
-        country:
-          type: string
-          nullable: true
-          example: "USA"
-        homePhone:
-          type: string
-          nullable: true
-          example: "(206) 555-9857"
-        extension:
-          type: string
-          nullable: true
-          example: "5467"
-        notes:
-          type: string
-          nullable: true
-          example: "Education includes a BA in psychology..."
-        reportsTo:
-          type: integer
-          nullable: true
-          description: FK self-referencial hacia employeeId del supervisor
-          example: 2
-        photoPath:
-          type: string
-          nullable: true
-          example: "http://accweb/emmployees/davolio.bmp"
-
-    NorthwindShipper:
-      type: object
-      properties:
-        shipperId:
-          type: integer
-          example: 1
-        companyName:
-          type: string
-          example: "Speedy Express"
-        phone:
-          type: string
-          nullable: true
-          example: "(503) 555-9831"
-
-    NorthwindTerritory:
-      type: object
-      properties:
-        territoryId:
-          type: string
-          description: Clave natural (varchar, ej. "01581")
-          example: "01581"
-        territoryDescription:
-          type: string
-          example: "Westboro"
-        regionId:
-          type: integer
-          example: 1
-
-    NorthwindRegion:
-      type: object
-      properties:
-        regionId:
-          type: integer
-          example: 1
-        regionDescription:
-          type: string
-          example: "Eastern"
-
-    NorthwindEmployeeTerritory:
-      type: object
-      description: Tabla de unión employees ↔ territories (clave compuesta)
-      properties:
-        employeeId:
-          type: integer
-          example: 1
-        territoryId:
-          type: string
-          example: "06897"
-
-    NorthwindCustomerDemographic:
-      type: object
-      properties:
-        customerTypeId:
-          type: string
-          description: Clave natural (varchar)
-          example: "A"
-        customerDesc:
-          type: string
-          nullable: true
-          example: null
-
-    NorthwindCustomerCustomerDemo:
-      type: object
-      description: Tabla de unión customers ↔ customer_demographics (clave compuesta)
-      properties:
-        customerId:
-          type: string
-          example: "ALFKI"
-        customerTypeId:
-          type: string
-          example: "A"
-
-    NorthwindUsState:
-      type: object
-      properties:
-        stateId:
-          type: integer
-          example: 1
-        stateName:
-          type: string
-          nullable: true
-          example: "Alabama"
-        stateAbbr:
-          type: string
-          nullable: true
-          example: "AL"
-        stateRegion:
-          type: string
-          nullable: true
-          example: "south"
+          example: "Todos los productos sobre el mínimo"
 
 paths:
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # GENERAL
+  # CLERKIVA — Auth
   # ═══════════════════════════════════════════════════════════════════════════
 
-  /home:
-    get:
-      tags:
-        - General
-      summary: Hello World — health check
-      description: Endpoint raíz definido en `AppController`. Devuelve un string de bienvenida.
-      operationId: getHello
-      responses:
-        "200":
-          description: Servidor funcionando correctamente
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: "Hello World! Servicio Principal"
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # LAB 1 – DEMO
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  /lab1/demo/params/{id}:
-    get:
-      tags:
-        - Lab 1 – Demo
-      summary: "@Param + ParseIntPipe"
-      description: Extrae `:id` del path y lo convierte a número entero. Devuelve 400 si el valor no es parseable como entero.
-      operationId: demoParams
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 42
-      responses:
-        "200":
-          description: Param recibido y tipado correctamente
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 42
-                      type:
-                        type: string
-                        example: "number"
-                      note:
-                        type: string
-                        example: "ParseIntPipe coercionó el string del path a number"
-              examples:
-                ok:
-                  value:
-                    data:
-                      id: 42
-                      type: "number"
-                      note: "ParseIntPipe coercionó el string del path a number"
-        "400":
-          description: El valor no es un entero válido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                badParam:
-                  value:
-                    statusCode: 400
-                    message: "Validation failed (numeric string is expected)"
-                    error: "Bad Request"
-
-  /lab1/demo/query:
-    get:
-      tags:
-        - Lab 1 – Demo
-      summary: "@Query tipado con DTO (page, limit, sort)"
-      description: |
-        Recibe query params y los transforma al tipo correcto gracias a `class-transformer` + `transform: true` en `ValidationPipe`.
-        Sin `@Type(() => Number)` en el DTO, `"?page=2"` llegaría como `string` y `@IsInt` fallaría.
-      operationId: demoQuery
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-          example: 2
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            default: 10
-          example: 5
-        - name: sort
-          in: query
-          schema:
-            type: string
-          example: "name"
-      responses:
-        "200":
-          description: Query params recibidos y transformados
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      page:
-                        type: integer
-                        example: 2
-                      limit:
-                        type: integer
-                        example: 5
-                      sort:
-                        type: string
-                        example: "name"
-
-  /lab1/demo/headers:
-    get:
-      tags:
-        - Lab 1 – Demo
-      summary: "@Headers — leer el header Authorization"
-      description: Lee el header `Authorization` con `@Headers('authorization')`. Enviá cualquier valor para verlo reflejado en la respuesta.
-      operationId: demoHeaders
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: "Bearer mi-token-de-prueba"
-      responses:
-        "200":
-          description: Valor del header recibido
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      authorization:
-                        type: string
-                        nullable: true
-                        example: "Bearer mi-token-de-prueba"
-                      note:
-                        type: string
-                        example: "Leído con @Headers(\"authorization\")"
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # LAB 1 – PRODUCTS (in-memory CRUD)
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  /lab1/products:
-    get:
-      tags:
-        - Lab 1 – Products
-      summary: Listar productos
-      description: Devuelve todos los productos. Soporta filtros opcionales por nombre y categoría. Los datos viven en memoria — se reinician al reiniciar la app.
-      operationId: lab1FindAllProducts
-      parameters:
-        - name: search
-          in: query
-          schema:
-            type: string
-          description: Filtro parcial por nombre
-          example: "laptop"
-        - name: category
-          in: query
-          schema:
-            type: string
-          description: Filtro exacto por categoría
-          example: "Electronics"
-      responses:
-        "200":
-          description: Lista de productos
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Lab1Product'
-
+  /clerkiva/auth/login:
     post:
       tags:
-        - Lab 1 – Products
-      summary: Crear producto
-      operationId: lab1CreateProduct
+        - Clerkiva – Auth
+      summary: Login (JWT)
+      description: |
+        Mismo patrón que Clerkiva real: `userID` + `password` → JWT con `{id, rol}`.
+
+        **Usuarios disponibles:**
+        | usuario | password | rol |
+        |---------|----------|-----|
+        | admin | admin123 | ADMIN |
+        | cajero01 | cajero123 | CAJERO |
+        | consulta | consulta123 | CONSULTA |
+        | deposito | deposito123 | DEPOSITO |
+      operationId: clerkivaLogin
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Lab1CreateProductDto'
-            examples:
-              valido:
-                value:
-                  name: "Laptop Pro 15"
-                  price: 999.99
-                  category: "Electronics"
-                  stock: 100
-              invalido:
-                summary: Validación fallida → 400
-                value:
-                  name: "X"
-                  price: -10
-                  category: ""
-                  stock: 1.5
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         "201":
-          description: Producto creado
+          description: Login exitoso — copiá el token y usá Authorize
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Lab1Product'
-                  message:
-                    type: string
-                    example: "Product created successfully"
-        "400":
-          description: Error de validación
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-
-  /lab1/products/{id}:
-    get:
-      tags:
-        - Lab 1 – Products
-      summary: Obtener producto por ID
-      operationId: lab1FindOneProduct
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 1
-      responses:
-        "200":
-          description: Producto encontrado
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Lab1Product'
-        "404":
-          description: Producto no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    patch:
-      tags:
-        - Lab 1 – Products
-      summary: Actualizar producto parcialmente (PATCH)
-      description: Solo enviá los campos que querés modificar. PATCH es actualización parcial, no reemplaza el recurso completo (que sería PUT).
-      operationId: lab1UpdateProduct
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 1
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Lab1UpdateProductDto'
-            example:
-              price: 799.99
-              stock: 50
-      responses:
-        "200":
-          description: Producto actualizado
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Lab1Product'
-                  message:
-                    type: string
-                    example: "Product updated successfully"
-        "404":
-          description: Producto no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    delete:
-      tags:
-        - Lab 1 – Products
-      summary: Eliminar producto
-      operationId: lab1DeleteProduct
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 1
-      responses:
-        "200":
-          description: Producto eliminado
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Lab1Product'
-                  message:
-                    type: string
-                    example: "Product deleted successfully"
-        "404":
-          description: Producto no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # LAB 2 – PIPES
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  /lab2/pipes/parse-int/{value}:
-    get:
-      tags:
-        - Lab 2 – Pipes
-      summary: ParseIntPipe — coerce string a entero
-      description: Si el valor no es parseable como entero, NestJS responde 400 automáticamente sin llegar al handler.
-      operationId: lab2ParseInt
-      parameters:
-        - name: value
-          in: path
-          required: true
-          schema:
-            type: string
-          examples:
-            valido:
-              value: "99"
-            invalido:
-              value: "abc"
-      responses:
-        "200":
-          description: Valor parseado correctamente
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      value:
-                        type: integer
-                        example: 99
-                      type:
-                        type: string
-                        example: "number"
-        "400":
-          description: El valor no es un entero válido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /lab2/pipes/parse-uuid/{id}:
-    get:
-      tags:
-        - Lab 2 – Pipes
-      summary: ParseUUIDPipe — valida UUID v4
-      operationId: lab2ParseUuid
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          examples:
-            valido:
-              value: "550e8400-e29b-41d4-a716-446655440000"
-            invalido:
-              value: "no-es-uuid"
-      responses:
-        "200":
-          description: UUID válido
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        format: uuid
-                        example: "550e8400-e29b-41d4-a716-446655440000"
-                      valid:
-                        type: boolean
-                        example: true
-        "400":
-          description: UUID inválido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /lab2/pipes/custom/{value}:
-    get:
-      tags:
-        - Lab 2 – Pipes
-      summary: CustomUppercasePipe — transforma a MAYÚSCULAS
-      description: Pipe personalizado que toma el string del param y lo convierte a uppercase antes de que llegue al handler.
-      operationId: lab2CustomPipe
-      parameters:
-        - name: value
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "hola-mundo"
-      responses:
-        "200":
-          description: String transformado a UPPERCASE
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      value:
-                        type: string
-                        example: "HOLA-MUNDO"
-                      note:
-                        type: string
-                        example: "Transformed to UPPERCASE by CustomUppercasePipe"
-
-  /lab2/pipes/validate:
-    post:
-      tags:
-        - Lab 2 – Pipes
-      summary: ValidationPipe vía DTO — valida body y transforma tipos
-      operationId: lab2ValidatePipe
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ValidatePipeDto'
-            examples:
-              valido:
-                value:
-                  message: "Hello World"
-                  count: 3
-              invalido:
-                summary: Validación fallida → 400
-                value:
-                  message: ""
-                  count: 0
-      responses:
-        "201":
-          description: DTO válido — devuelve los datos transformados
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/ValidatePipeDto'
-        "400":
-          description: Error de validación
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # LAB 2 – GUARDS
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  /lab2/guards/public:
-    get:
-      tags:
-        - Lab 2 – Guards
-      summary: Ruta pública — sin guard
-      operationId: lab2GuardPublic
-      responses:
-        "200":
-          description: Siempre accesible
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "Public endpoint — always accessible"
-                      timestamp:
-                        type: string
-                        format: date-time
-
-  /lab2/guards/protected:
-    get:
-      tags:
-        - Lab 2 – Guards
-      summary: ApiKeyGuard — requiere header `x-api-key`
-      description: |
-        Guard que lee el header `x-api-key`. Solo acepta el valor `lab2-secret`.
-        Devuelve 401 si el header falta o tiene otro valor.
-      operationId: lab2GuardProtected
-      parameters:
-        - name: x-api-key
-          in: header
-          required: true
-          schema:
-            type: string
-          example: "lab2-secret"
-      responses:
-        "200":
-          description: Acceso concedido
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "Access granted"
-                      timestamp:
-                        type: string
-                        format: date-time
-        "401":
-          description: API key inválida o faltante
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                sinKey:
-                  value:
-                    statusCode: 401
-                    message: "Invalid or missing API key — usa x-api-key: lab2-secret"
-                    error: "Unauthorized"
-
-  /lab2/guards/protected-roles:
-    get:
-      tags:
-        - Lab 2 – Guards
-      summary: ApiKeyGuard + RolesGuard — requiere API key Y rol admin
-      description: |
-        Aplica dos guards en cadena:
-        1. `ApiKeyGuard` valida `x-api-key: lab2-secret`
-        2. `RolesGuard` valida `x-user-role: admin`
-      operationId: lab2GuardRoles
-      parameters:
-        - name: x-api-key
-          in: header
-          required: true
-          schema:
-            type: string
-          example: "lab2-secret"
-        - name: x-user-role
-          in: header
-          required: true
-          schema:
-            type: string
-            enum: [admin, user]
-          example: "admin"
-      responses:
-        "200":
-          description: Acceso de admin concedido
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "Admin access granted"
-                      timestamp:
-                        type: string
-                        format: date-time
-        "401":
-          description: API key inválida
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        "403":
-          description: Rol insuficiente (no es admin)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                sinRol:
-                  value:
-                    statusCode: 403
-                    message: "Forbidden resource"
-                    error: "Forbidden"
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # LAB 2 – INTERCEPTORS
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  /lab2/interceptors/logging:
-    get:
-      tags:
-        - Lab 2 – Interceptors
-      summary: LoggingInterceptor — loguea tiempo de respuesta en consola
-      description: El interceptor registra `[GET /lab2/interceptors/logging] Xms` en la consola del servidor.
-      operationId: lab2InterceptorLogging
-      responses:
-        "200":
-          description: OK — revisá los logs del servidor
-          content:
-            application/json:
-              schema:
-                type: object
-
-  /lab2/interceptors/transform:
-    get:
-      tags:
-        - Lab 2 – Interceptors
-      summary: TransformInterceptor — envuelve la respuesta con timestamp y success
-      description: |
-        Demuestra el patrón de envolver respuestas en un sobre estándar:
-        `{ data: T, timestamp: string, success: true }`
-      operationId: lab2InterceptorTransform
-      responses:
-        "200":
-          description: Respuesta envuelta por el interceptor
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                  timestamp:
-                    type: string
-                    format: date-time
-                  success:
-                    type: boolean
-                    example: true
-
-  /lab2/interceptors/timeout:
-    get:
-      tags:
-        - Lab 2 – Interceptors
-      summary: TimeoutInterceptor — cancela requests que tardan demasiado
-      description: Si el handler no responde dentro del tiempo configurado, devuelve 408 Request Timeout.
-      operationId: lab2InterceptorTimeout
-      responses:
-        "200":
-          description: Respuesta dentro del tiempo límite
-          content:
-            application/json:
-              schema:
-                type: object
-        "408":
-          description: Timeout — el handler tardó demasiado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # LAB 2 – EXCEPTIONS
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  /lab2/exceptions/not-found:
-    get:
-      tags:
-        - Lab 2 – Exceptions
-      summary: Lanza NotFoundException → 404
-      operationId: lab2ExceptionNotFound
-      responses:
-        "404":
-          description: Recurso no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /lab2/exceptions/forbidden:
-    get:
-      tags:
-        - Lab 2 – Exceptions
-      summary: Lanza ForbiddenException → 403
-      operationId: lab2ExceptionForbidden
-      responses:
-        "403":
-          description: Acceso prohibido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /lab2/exceptions/custom:
-    get:
-      tags:
-        - Lab 2 – Exceptions
-      summary: Lanza excepción custom
-      operationId: lab2ExceptionCustom
-      responses:
-        "400":
-          description: Excepción custom lanzada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /lab2/exceptions/validate:
-    post:
-      tags:
-        - Lab 2 – Exceptions
-      summary: ValidationPipe — campo requerido
-      description: Enviá un body sin `requiredField` para ver el error de validación formateado por el HttpExceptionFilter.
-      operationId: lab2ExceptionValidate
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ValidateExceptionDto'
-            examples:
-              valido:
-                value:
-                  requiredField: "valor de prueba"
-              invalido:
-                summary: Campo vacío → 400
-                value:
-                  requiredField: ""
-              sinCampo:
-                summary: Campo ausente → 400
-                value: {}
-      responses:
-        "201":
-          description: Validación exitosa
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/ValidateExceptionDto'
-        "400":
-          description: Campo requerido faltante o vacío
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # LAB 2 – DECORATORS
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  /lab2/decorators/user:
-    get:
-      tags:
-        - Lab 2 – Decorators
-      summary: "@CurrentUser() — extrae x-user-id del header"
-      description: Decorator custom que lee el header `x-user-id` y lo inyecta como parámetro del handler.
-      operationId: lab2DecoratorUser
-      parameters:
-        - name: x-user-id
-          in: header
-          schema:
-            type: string
-          example: "42"
-      responses:
-        "200":
-          description: User ID extraído del header
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      userId:
-                        type: string
-                        nullable: true
-                        example: "42"
-                      message:
-                        type: string
-                        example: "Hello, user 42"
-
-  /lab2/decorators/public:
-    get:
-      tags:
-        - Lab 2 – Decorators
-      summary: "@Public() — ruta marcada como pública con metadata"
-      operationId: lab2DecoratorPublic
-      responses:
-        "200":
-          description: Ruta pública vía decorator
-          content:
-            application/json:
-              schema:
-                type: object
-
-  /lab2/decorators/throttled:
-    get:
-      tags:
-        - Lab 2 – Decorators
-      summary: "@Throttle(10, 60) — rate limit configurado vía metadata"
-      description: Un `ThrottleGuard` podría leer esta metadata para aplicar rate limiting de 10 requests/60s.
-      operationId: lab2DecoratorThrottled
-      responses:
-        "200":
-          description: Metadata de throttle aplicada
-          content:
-            application/json:
-              schema:
-                type: object
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # LAB 2 – MIDDLEWARE
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  /lab2/middleware/request-id:
-    get:
-      tags:
-        - Lab 2 – Middleware
-      summary: RequestIdMiddleware — agrega x-request-id a la respuesta
-      description: Revisá los **Response Headers** — el middleware agrega `x-request-id` con un UUID único por request.
-      operationId: lab2MiddlewareRequestId
-      responses:
-        "200":
-          description: OK — x-request-id visible en Response Headers
-          headers:
-            x-request-id:
-              schema:
-                type: string
-                format: uuid
-              description: UUID generado por el middleware
-          content:
-            application/json:
-              schema:
-                type: object
-
-  /lab2/middleware/logged:
-    get:
-      tags:
-        - Lab 2 – Middleware
-      summary: Middleware de logging — registra el request en consola
-      operationId: lab2MiddlewareLogged
-      responses:
-        "200":
-          description: OK — revisá los logs del servidor
-          content:
-            application/json:
-              schema:
-                type: object
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # LAB 3 – AUTH
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  /lab3/auth/register:
-    post:
-      tags:
-        - Lab 3 – Auth
-      summary: Registrar nuevo usuario
-      operationId: lab3Register
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateUserDto'
-            example:
-              email: "nuevo@ejemplo.com"
-              password: "password123"
-              role: "user"
-      responses:
-        "201":
-          description: Usuario registrado (sin contraseña en la respuesta)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/UserResponse'
-        "400":
-          description: Datos inválidos (email mal formado, password muy corta)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationErrorResponse'
-        "409":
-          description: El email ya está registrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                duplicate:
-                  value:
-                    statusCode: 409
-                    message: "Email already registered"
-                    error: "Conflict"
-
-  /lab3/auth/login:
-    post:
-      tags:
-        - Lab 3 – Auth
-      summary: Iniciar sesión — devuelve JWT
-      description: |
-        Usuarios semilla disponibles:
-        - `admin@lab3.com` / `admin123` (role: admin)
-        - `user@lab3.com` / `user123` (role: user)
-      operationId: lab3Login
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginDto'
-            examples:
-              admin:
-                summary: Login como admin
-                value:
-                  email: "admin@lab3.com"
-                  password: "admin123"
-              user:
-                summary: Login como user
-                value:
-                  email: "user@lab3.com"
-                  password: "user123"
-      responses:
-        "200":
-          description: Login exitoso — copiá el access_token para usarlo en Authorization
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-              examples:
-                ok:
-                  value:
-                    access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    user:
-                      id: 1
-                      email: "admin@lab3.com"
-                      role: "admin"
-                      createdAt: "2026-06-01T12:00:00.000Z"
+                $ref: '#/components/schemas/LoginResponse'
         "401":
           description: Credenciales inválidas
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalido:
-                  value:
-                    statusCode: 401
-                    message: "Invalid credentials"
-                    error: "Unauthorized"
 
-  # ═══════════════════════════════════════════════════════════════════════════
-  # LAB 3 – POSTS
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  /lab3/posts:
+  /clerkiva/auth/me:
     get:
       tags:
-        - Lab 3 – Posts
-      summary: Listar posts publicados (paginado)
-      description: "Solo devuelve posts con `published: true`. Requiere JWT válido."
-      operationId: lab3FindAllPosts
+        - Clerkiva – Auth
+      summary: Usuario actual (password excluida)
+      description: |
+        Devuelve el usuario del token. **password** y **token** NO aparecen en la respuesta
+        gracias a `@Exclude()` en `UserEntity`.
+
+        En Clerkiva real, el endpoint `/auth` devuelve el usuario sin esta protección.
+      operationId: clerkivaMe
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Usuario actual sin campos sensibles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        "401":
+          description: Token inválido o ausente
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # CLERKIVA — Ventas
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /clerkiva/ventas:
+    get:
+      tags:
+        - Clerkiva – Ventas
+      summary: Listar ventas (con filtros opcionales)
+      description: Roles permitidos — CAJERO, CONSULTA, ADMIN. DEPOSITO recibe 403.
+      operationId: clerkivaGetVentas
       security:
         - BearerAuth: []
       parameters:
-        - name: page
+        - name: desde
           in: query
+          required: false
           schema:
-            type: integer
-            minimum: 1
-            default: 1
-          example: 1
-        - name: limit
+            type: string
+            format: date
+          example: "2026-06-01"
+        - name: hasta
           in: query
+          required: false
           schema:
-            type: integer
-            minimum: 1
-            default: 10
-          example: 10
+            type: string
+            format: date
+          example: "2026-06-30"
+        - name: medioDePago
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [efectivo, tarjeta, transferencia]
       responses:
         "200":
-          description: Lista de posts publicados
+          description: Array de ventas
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/PostResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/VentaResponse'
         "401":
           description: Token ausente o inválido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+        "403":
+          description: Rol insuficiente (DEPOSITO)
 
     post:
       tags:
-        - Lab 3 – Posts
-      summary: Crear post (nace como borrador)
-      description: "El post se crea con `published: false`. Usá `PUT /:id/publish` para publicarlo."
-      operationId: lab3CreatePost
+        - Clerkiva – Ventas
+      summary: Registrar venta
+      description: |
+        Roles permitidos — CAJERO, ADMIN. CONSULTA y DEPOSITO reciben 403.
+
+        El total se calcula automáticamente de `cantidad × precioUnitario` por cada línea.
+        En Clerkiva real, si medioDePago es `efectivo`, también crea un movimiento de caja.
+      operationId: clerkivaCreateVenta
       security:
         - BearerAuth: []
       requestBody:
@@ -1821,71 +556,40 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreatePostDto'
+              $ref: '#/components/schemas/CreateVentaRequest'
             example:
-              title: "Mi primer post"
-              content: "Este es el contenido del post de prueba."
+              lineasVenta:
+                - productoId: 1
+                  descripcion: "Yerba Mate 1kg"
+                  cantidad: 2
+                  precioUnitario: 1500
+                - productoId: 2
+                  descripcion: "Azúcar 1kg"
+                  cantidad: 1
+                  precioUnitario: 800
+              medioDePago: "efectivo"
       responses:
         "201":
-          description: Post creado como borrador
+          description: Venta registrada
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/PostResponse'
-                  message:
-                    type: string
-                    example: "Post created"
+                $ref: '#/components/schemas/VentaResponse'
         "400":
-          description: Validación fallida
+          description: Validación fallida (lineasVenta vacío, medioDePago inválido)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidationErrorResponse'
-        "401":
-          description: Token ausente o inválido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+        "403":
+          description: Rol insuficiente (CONSULTA, DEPOSITO)
 
-  /lab3/posts/my:
+  /clerkiva/ventas/{id}:
     get:
       tags:
-        - Lab 3 – Posts
-      summary: Listar mis posts (publicados y borradores)
-      description: Devuelve todos los posts del usuario autenticado, independientemente de su estado.
-      operationId: lab3FindMyPosts
-      security:
-        - BearerAuth: []
-      responses:
-        "200":
-          description: Posts del usuario autenticado
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/PostResponse'
-        "401":
-          description: Token ausente o inválido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /lab3/posts/{id}:
-    get:
-      tags:
-        - Lab 3 – Posts
-      summary: Obtener post por ID
-      description: Devuelve el post si está publicado, o si el solicitante es el autor o un admin.
-      operationId: lab3FindOnePost
+        - Clerkiva – Ventas
+      summary: Detalle de venta por ID
+      operationId: clerkivaGetVentaById
       security:
         - BearerAuth: []
       parameters:
@@ -1897,353 +601,306 @@ paths:
           example: 1
       responses:
         "200":
-          description: Post encontrado
+          description: Venta encontrada
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/PostResponse'
-        "401":
-          description: Token ausente o inválido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/VentaResponse'
         "404":
-          description: Post no encontrado
+          description: Venta no encontrada
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-    patch:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # CLERKIVA — Cajas
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /clerkiva/cajas/apertura:
+    post:
       tags:
-        - Lab 3 – Posts
-      summary: Actualizar post parcialmente
-      description: Solo el autor o un admin pueden editar el post.
-      operationId: lab3UpdatePost
+        - Clerkiva – Cajas
+      summary: Abrir sesión de caja
+      description: Registra el saldo inicial. Solo puede haber una sesión abierta a la vez.
+      operationId: clerkivaAperturaCaja
       security:
         - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 1
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdatePostDto'
-            example:
-              title: "Título actualizado"
-              content: "Contenido actualizado."
+              $ref: '#/components/schemas/AperturaCajaRequest'
       responses:
-        "200":
-          description: Post actualizado
+        "201":
+          description: Sesión abierta
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/PostResponse'
-                  message:
-                    type: string
-                    example: "Post updated"
-        "403":
-          description: El usuario no es el autor ni admin
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/SesionCajaResponse'
+        "400":
+          description: Ya hay una sesión abierta
 
-    delete:
-      tags:
-        - Lab 3 – Posts
-      summary: Eliminar post
-      description: Solo el autor o un admin pueden eliminar el post.
-      operationId: lab3DeletePost
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 1
-      responses:
-        "200":
-          description: Post eliminado
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/PostResponse'
-                  message:
-                    type: string
-                    example: "Post deleted"
-        "403":
-          description: El usuario no es el autor ni admin
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /lab3/posts/{id}/publish:
-    put:
-      tags:
-        - Lab 3 – Posts
-      summary: Alternar estado publicado/borrador
-      description: Cambia `published` de `true` a `false` o viceversa. Solo el autor o un admin pueden hacerlo.
-      operationId: lab3TogglePublish
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 1
-      responses:
-        "200":
-          description: Estado de publicación alternado
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/PostResponse'
-                  message:
-                    type: string
-                    example: "Publish status toggled"
-        "403":
-          description: El usuario no es el autor ni admin
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # LAB 3 – FILES
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  /lab3/files/upload:
+  /clerkiva/cajas/movimiento:
     post:
       tags:
-        - Lab 3 – Files
-      summary: Subir archivo (imagen o PDF, máx 5 MB)
-      description: |
-        Tipos MIME permitidos: `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `application/pdf`.
-        El archivo se guarda en `/uploads/` con un nombre único generado por el servidor.
-        En Postman: Body → **form-data** → columna izquierda cambiá `Text` por **`File`**.
-      operationId: lab3UploadFile
+        - Clerkiva – Cajas
+      summary: Registrar movimiento de caja
+      description: Ingreso o egreso de efectivo en la sesión activa.
+      operationId: clerkivaMovimientoCaja
       security:
         - BearerAuth: []
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMovimientoRequest'
+      responses:
+        "201":
+          description: Movimiento registrado — devuelve la sesión actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaResponse'
+        "400":
+          description: No hay sesión de caja abierta
+
+  /clerkiva/cajas/cierre:
+    post:
+      tags:
+        - Clerkiva – Cajas
+      summary: Cerrar sesión de caja
+      description: |
+        Calcula la diferencia entre el saldo esperado y el contado físicamente.
+
+        `diferencia = saldoFinal - (saldoInicial + ingresos - egresos)`
+
+        Negativo = faltante, positivo = sobrante.
+      operationId: clerkivaCierreCaja
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CierreCajaRequest'
+      responses:
+        "201":
+          description: Sesión cerrada con diferencia calculada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaResponse'
+        "400":
+          description: No hay sesión de caja abierta
+
+  /clerkiva/cajas/sesion-activa:
+    get:
+      tags:
+        - Clerkiva – Cajas
+      summary: Ver sesión activa
+      operationId: clerkivaGetSesionActiva
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Sesión activa con sus movimientos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaResponse'
+        "404":
+          description: No hay sesión de caja abierta
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # CLERKIVA — Reportes
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /clerkiva/reportes/empleado-top:
+    get:
+      tags:
+        - Clerkiva – Reportes
+      summary: Ranking de empleados por ventas (solo ADMIN)
+      description: |
+        Agrupa ventas por usuario y suma totales — mismo patrón que Clerkiva real
+        pero en memoria en vez de `QueryBuilder + groupBy + SUM`.
+
+        Solo ADMIN puede acceder. Cualquier otro rol recibe 403.
+      operationId: clerkivaEmpleadoTop
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Ranking de empleados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ranking:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EmpleadoRankingItem'
+        "403":
+          description: Solo ADMIN
+
+  /clerkiva/reportes/resumen-diario:
+    get:
+      tags:
+        - Clerkiva – Reportes
+      summary: Resumen del día (solo ADMIN)
+      description: Total de ventas de hoy, cantidad, desglose por medio de pago.
+      operationId: clerkivaResumenDiario
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Resumen del día actual
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenDiarioResponse'
+        "403":
+          description: Solo ADMIN
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB CLERKIVA — Rate Limiting
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab-clerkiva/auth/login:
+    post:
+      tags:
+        - Lab Clerkiva – Rate Limiting
+      summary: Login con rate limiting (max 5/min)
+      description: |
+        ## Brute-force protection con @nestjs/throttler
+
+        El login de Clerkiva actual **no tiene límite de intentos**.
+
+        Con `@Throttle({ default: { limit: 5, ttl: 60000 } })`:
+        el **6to intento en 60 segundos** recibe automáticamente **429 Too Many Requests**.
+
+        **Probalo:** mandá 6 requests seguidos y observá el cambio de respuesta.
+      operationId: labClerkivaLoginSeguro
+      requestBody:
+        required: true
+        content:
+          application/json:
             schema:
               type: object
-              required: [file]
               properties:
-                file:
+                userID:
                   type: string
-                  format: binary
-                  description: "Archivo — campo debe llamarse 'file'"
+                  example: "cualquier_usuario"
+                password:
+                  type: string
+                  example: "cualquier_password"
       responses:
-        "201":
-          description: Archivo subido exitosamente
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/UploadedFileResponse'
-                  message:
-                    type: string
-                    example: "Archivo subido exitosamente"
-              examples:
-                ok:
-                  value:
-                    data:
-                      filename: "1717200000000-123456789.jpg"
-                      originalname: "foto.jpg"
-                      mimetype: "image/jpeg"
-                      size: 204800
-                      url: "/uploads/1717200000000-123456789.jpg"
-                    message: "Archivo subido exitosamente"
-        "400":
-          description: Tipo de archivo no permitido, tamaño excedido o campo ausente
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                tipoNoPermitido:
-                  value:
-                    statusCode: 400
-                    message: "Tipo \"text/plain\" no permitido. Permitidos: image/jpeg, image/png, ..."
-                    error: "Bad Request"
         "401":
-          description: Token ausente o inválido
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          description: Credenciales inválidas (siempre, para probar el throttle)
+        "429":
+          description: Too Many Requests — 5 intentos superados en 60 segundos
 
-  /lab3/files:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB CLERKIVA — SSE Tiempo Real
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab-clerkiva/caja/eventos:
     get:
       tags:
-        - Lab 3 – Files
-      summary: Listar archivos en /uploads
-      operationId: lab3ListFiles
-      responses:
-        "200":
-          description: Lista de archivos disponibles
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/FileListEntry'
-
-  /lab3/files/{filename}:
-    get:
-      tags:
-        - Lab 3 – Files
-      summary: Descargar/streamear archivo por nombre
+        - Lab Clerkiva – SSE Tiempo Real
+      summary: Stream SSE de ventas en tiempo real
       description: |
-        Devuelve el archivo como stream. También accesible vía la ruta estática `/uploads/{filename}`.
-        El header `Content-Disposition: inline` hace que el browser lo muestre en vez de descargarlo.
-      operationId: lab3ServeFile
-      parameters:
-        - name: filename
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "1717200000000-123456789.jpg"
+        ## Server-Sent Events — sin WebSockets, sin configuración extra
+
+        Abrí esta URL en el browser o con:
+        ```
+        curl -N http://localhost:3000/lab-clerkiva/caja/eventos
+        ```
+
+        Luego hacé un POST a `/lab-clerkiva/caja/venta` y vas a ver el evento
+        aparecer instantáneamente.
+
+        **¿Para qué sirve en Clerkiva?**
+        - La caja 2 ve en tiempo real las ventas de la caja 1 sin recargar
+        - El gerente ve las ventas del día acumularse en vivo en un dashboard
+        - Alertas de stock bajo en tiempo real para el depósito
+
+        SSE es HTTP puro: funciona con cualquier proxy/CDN, reconexión automática del browser.
+      operationId: labClerkivaEventosSSE
       responses:
         "200":
-          description: Stream del archivo
+          description: Stream SSE (text/event-stream)
           content:
-            image/jpeg:
+            text/event-stream:
               schema:
                 type: string
-                format: binary
-            image/png:
-              schema:
-                type: string
-                format: binary
-            application/pdf:
-              schema:
-                type: string
-                format: binary
-        "404":
-          description: Archivo no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                example: "data: {\"id\":1,\"usuario\":\"cajero01\",\"total\":5000,\"medioDePago\":\"efectivo\",\"timestamp\":\"2026-06-17T20:00:00.000Z\"}\n\n"
 
-    delete:
-      tags:
-        - Lab 3 – Files
-      summary: Eliminar archivo del disco
-      operationId: lab3DeleteFile
-      parameters:
-        - name: filename
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "1717200000000-123456789.jpg"
-      responses:
-        "200":
-          description: Archivo eliminado
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      filename:
-                        type: string
-                        example: "1717200000000-123456789.jpg"
-                  message:
-                    type: string
-                    example: "Archivo eliminado exitosamente"
-        "404":
-          description: Archivo no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # LAB 3 – EVENTS
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  /lab3/events/trigger:
+  /lab-clerkiva/caja/venta:
     post:
       tags:
-        - Lab 3 – Events
-      summary: Emitir evento custom con EventEmitter2
-      description: Emite el evento especificado. Podés escuchar eventos del sistema también (ej. `post.created`, `file.uploaded`).
-      operationId: lab3TriggerEvent
+        - Lab Clerkiva – SSE Tiempo Real
+      summary: Registrar venta y emitir evento al stream SSE
+      description: |
+        Registra una venta y la emite a **todos los clientes conectados al stream /eventos**.
+
+        Abrí primero `GET /lab-clerkiva/caja/eventos` en otra pestaña, luego
+        mandá un POST acá y verás el evento aparecer instantáneamente.
+      operationId: labClerkivaNuevaVenta
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TriggerEventDto'
-            example:
-              event: "test.event"
-              payload:
-                msg: "hola desde Postman"
-                ts: 1717200000
+              $ref: '#/components/schemas/NuevaVentaRequest'
       responses:
         "201":
-          description: Evento emitido
+          description: Venta registrada y evento emitido al stream
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   data:
-                    type: object
-                    properties:
-                      emitted:
-                        type: string
-                        example: "test.event"
+                    $ref: '#/components/schemas/EventoVentaSSE'
+                  message:
+                    type: string
+                    example: "Evento emitido — revisá el stream en GET /lab-clerkiva/caja/eventos"
 
-  /lab3/events/log:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LAB CLERKIVA — Cron Jobs
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  /lab-clerkiva/tareas/log:
     get:
       tags:
-        - Lab 3 – Events
-      summary: Ver log de todos los eventos emitidos
-      description: Devuelve todos los eventos capturados desde que la app arrancó (almacenados en memoria).
-      operationId: lab3GetEventLog
+        - Lab Clerkiva – Cron Jobs
+      summary: Log de tareas automáticas ejecutadas
+      description: |
+        ## @Cron() — tareas automáticas con @nestjs/schedule
+
+        **¿Por qué Clerkiva necesita esto?**
+
+        Actualmente en Clerkiva:
+        - El resumen de ventas se genera manualmente cuando el gerente lo recuerda
+        - Nadie sabe si hay productos bajo stock hasta que el cajero lo nota
+        - No hay backups automáticos
+
+        **Con @Cron():**
+        - `@Cron('59 23 * * *')` → resumen automático a las 23:59, email al gerente
+        - `@Cron('0 * * * *')` → chequeo de stock cada hora
+        - `@Cron(CronExpression.EVERY_DAY_AT_6AM)` → backup diario
+
+        En este lab los crons corren cada 30 segundos y 2 minutos para que puedas
+        verlos en acción. Esperá unos segundos y refrescá este endpoint.
+      operationId: labClerkivaTareasLog
       responses:
         "200":
-          description: Log de eventos en memoria
+          description: Últimas 30 ejecuciones de cron jobs
           content:
             application/json:
               schema:
@@ -2252,493 +909,38 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/EventLogEntry'
-              examples:
-                ok:
-                  value:
-                    data:
-                      - event: "post.created"
-                        payload:
-                          postId: 1
-                          title: "Mi primer post"
-                          authorId: 1
-                        timestamp: "2026-06-01T12:00:00.000Z"
-                      - event: "file.uploaded"
-                        payload:
-                          filename: "1717200000000-123456789.jpg"
-                          mimetype: "image/jpeg"
-                          size: 204800
-                        timestamp: "2026-06-01T12:05:00.000Z"
+                      $ref: '#/components/schemas/LogEntryResponse'
+                  nota:
+                    type: string
+                    example: "Chequeo stock: cada 30s (en prod: cada hora). Resumen diario: cada 2min (en prod: 23:59)."
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # NORTHWIND – GET endpoints (solo lectura, synchronize: false)
+  # LAB CLERKIVA — Health Check
   # ═══════════════════════════════════════════════════════════════════════════
 
-  /categories:
+  /lab-clerkiva/salud:
     get:
       tags:
-        - Northwind – Categories
-      summary: Listar todas las categorías
-      operationId: northwindGetCategories
-      responses:
-        "200":
-          description: Array de categorías ordenado por categoryId
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindCategory'
+        - Lab Clerkiva – Health Check
+      summary: Health check del servidor
+      description: |
+        ## ¿Por qué Clerkiva necesita esto urgente?
 
-  /suppliers:
-    get:
-      tags:
-        - Northwind – Suppliers
-      summary: Listar todos los proveedores
-      operationId: northwindGetSuppliers
-      responses:
-        "200":
-          description: Array de proveedores ordenado por supplierId
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindSupplier'
+        Actualmente no hay forma de saber si el servidor está caído sin que alguien
+        lo reporte. El primer síntoma es "no funciona la caja" a las 8am.
 
-  /customers:
-    get:
-      tags:
-        - Northwind – Customers
-      summary: Listar todos los clientes
-      operationId: northwindGetCustomers
-      responses:
-        "200":
-          description: Array de clientes ordenado por companyName
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindCustomer'
+        **Con este endpoint:**
+        - UptimeRobot (gratis) lo consulta cada 5 minutos y manda WhatsApp/email si cae
+        - Railway/Render lo usa como liveness probe para reinicios automáticos
+        - El frontend puede mostrar un badge de estado en tiempo real
 
-  /customers/search:
-    get:
-      tags:
-        - Northwind – Customers
-      summary: Buscar clientes por nombre de empresa
-      operationId: northwindSearchCustomers
-      parameters:
-        - name: name
-          in: query
-          required: true
-          schema:
-            type: string
-          example: "Alfreds"
+        **Versión avanzada:** `@nestjs/terminus` agrega checks de DB, Redis, disco, memoria.
+      operationId: labClerkivaSalud
       responses:
         "200":
-          description: Clientes que coinciden con el nombre
+          description: Servidor funcionando
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindCustomer'
+                $ref: '#/components/schemas/SaludResponse'
 
-  /customers/country/{country}:
-    get:
-      tags:
-        - Northwind – Customers
-      summary: Filtrar clientes por país
-      operationId: northwindGetCustomersByCountry
-      parameters:
-        - name: country
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "Germany"
-      responses:
-        "200":
-          description: Clientes del país indicado
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindCustomer'
-
-  /customers/{id}:
-    get:
-      tags:
-        - Northwind – Customers
-      summary: Obtener cliente por ID (customer_id varchar)
-      operationId: northwindGetCustomerById
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "ALFKI"
-      responses:
-        "200":
-          description: Cliente encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NorthwindCustomer'
-        "404":
-          description: Cliente no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /products:
-    get:
-      tags:
-        - Northwind – Products
-      summary: Listar todos los productos
-      operationId: northwindGetProducts
-      responses:
-        "200":
-          description: Array de productos ordenado por productName
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindProduct'
-
-  /products/search:
-    get:
-      tags:
-        - Northwind – Products
-      summary: Buscar productos por nombre
-      operationId: northwindSearchProducts
-      parameters:
-        - name: name
-          in: query
-          required: true
-          schema:
-            type: string
-          example: "Chai"
-      responses:
-        "200":
-          description: Productos que coinciden con el nombre
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindProduct'
-
-  /products/category/{categoryId}:
-    get:
-      tags:
-        - Northwind – Products
-      summary: Filtrar productos por categoría
-      operationId: northwindGetProductsByCategory
-      parameters:
-        - name: categoryId
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 1
-      responses:
-        "200":
-          description: Productos de la categoría
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindProduct'
-
-  /products/supplier/{supplierId}:
-    get:
-      tags:
-        - Northwind – Products
-      summary: Filtrar productos por proveedor
-      operationId: northwindGetProductsBySupplier
-      parameters:
-        - name: supplierId
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 1
-      responses:
-        "200":
-          description: Productos del proveedor
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindProduct'
-
-  /products/{id}:
-    get:
-      tags:
-        - Northwind – Products
-      summary: Obtener producto por ID
-      operationId: northwindGetProductById
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 1
-      responses:
-        "200":
-          description: Producto encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NorthwindProduct'
-        "404":
-          description: Producto no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /orders:
-    get:
-      tags:
-        - Northwind – Orders
-      summary: Listar todas las órdenes
-      operationId: northwindGetOrders
-      responses:
-        "200":
-          description: Array de órdenes ordenado por orderId DESC
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindOrder'
-
-  /orders/customer/{customerId}:
-    get:
-      tags:
-        - Northwind – Orders
-      summary: Listar órdenes de un cliente
-      operationId: northwindGetOrdersByCustomer
-      parameters:
-        - name: customerId
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "ALFKI"
-      responses:
-        "200":
-          description: Órdenes del cliente
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindOrder'
-
-  /orders/employee/{employeeId}:
-    get:
-      tags:
-        - Northwind – Orders
-      summary: Listar órdenes atendidas por un empleado
-      operationId: northwindGetOrdersByEmployee
-      parameters:
-        - name: employeeId
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 1
-      responses:
-        "200":
-          description: Órdenes del empleado
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindOrder'
-
-  /orders/{id}:
-    get:
-      tags:
-        - Northwind – Orders
-      summary: Obtener orden por ID
-      operationId: northwindGetOrderById
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 10248
-      responses:
-        "200":
-          description: Orden encontrada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NorthwindOrder'
-        "404":
-          description: Orden no encontrada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /order_details:
-    get:
-      tags:
-        - Northwind – Order Details
-      summary: Listar todos los detalles de órdenes
-      description: Clave primaria compuesta — cada fila corresponde a un producto dentro de una orden.
-      operationId: northwindGetOrderDetails
-      responses:
-        "200":
-          description: Array de order_details ordenado por orderId
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindOrderDetail'
-
-  /employees:
-    get:
-      tags:
-        - Northwind – Employees
-      summary: Listar todos los empleados
-      operationId: northwindGetEmployees
-      responses:
-        "200":
-          description: Array de empleados ordenado por employeeId
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindEmployee'
-
-  /shippers:
-    get:
-      tags:
-        - Northwind – Shippers
-      summary: Listar todos los transportistas
-      operationId: northwindGetShippers
-      responses:
-        "200":
-          description: Array de shippers ordenado por shipperId
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindShipper'
-
-  /territories:
-    get:
-      tags:
-        - Northwind – Territories
-      summary: Listar todos los territorios
-      operationId: northwindGetTerritories
-      responses:
-        "200":
-          description: Array de territorios ordenado por territoryId
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindTerritory'
-
-  /region:
-    get:
-      tags:
-        - Northwind – Region
-      summary: Listar todas las regiones
-      operationId: northwindGetRegion
-      responses:
-        "200":
-          description: Array de regiones ordenado por regionId
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindRegion'
-
-  /employee_territories:
-    get:
-      tags:
-        - Northwind – Employee Territories
-      summary: Listar todas las asignaciones empleado–territorio
-      description: Tabla de unión entre `employees` y `territories`. Clave compuesta.
-      operationId: northwindGetEmployeeTerritories
-      responses:
-        "200":
-          description: Array de asignaciones ordenado por employeeId
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindEmployeeTerritory'
-
-  /customer_demographics:
-    get:
-      tags:
-        - Northwind – Customer Demographics
-      summary: Listar todos los tipos de cliente
-      operationId: northwindGetCustomerDemographics
-      responses:
-        "200":
-          description: Array de customer_demographics
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindCustomerDemographic'
-
-  /customer_customer_demo:
-    get:
-      tags:
-        - Northwind – Customer Customer Demo
-      summary: Listar todas las asignaciones cliente–tipo
-      description: Tabla de unión entre `customers` y `customer_demographics`. Clave compuesta.
-      operationId: northwindGetCustomerCustomerDemo
-      responses:
-        "200":
-          description: Array de customer_customer_demo
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindCustomerCustomerDemo'
-
-  /us_states:
-    get:
-      tags:
-        - Northwind – US States
-      summary: Listar todos los estados de EE.UU.
-      operationId: northwindGetUsStates
-      responses:
-        "200":
-          description: Array de us_states ordenado por stateId
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NorthwindUsState'
